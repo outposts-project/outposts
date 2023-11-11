@@ -1,0 +1,35 @@
+port: 7890
+socks-port: 7891
+allow-lan: true
+bind-address: "*"
+mode: rule
+log-level: info
+profile:
+  store-selected: false
+  tracing: false
+  store-fake-ip: false
+proxies:
+  - name: A
+    type: ss
+    server: tests.proxy1.com
+    port: 22008
+    cipher: aes-128-gcm
+    password: tests.proxy.com
+    udp: true
+  - name: B
+    type: ss
+    server: tests.proxy1.com
+    port: 22009
+    cipher: aes-128-gcm
+    password: tests.proxy.com
+    udp: true
+proxy-groups:
+  - name: "Proxy"
+    type: select
+    proxies:
+      - Auto
+      - DIRECT
+      - A
+      - B
+rules:
+  - DOMAIN-SUFFIX,google.com,Proxy
