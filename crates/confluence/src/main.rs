@@ -84,10 +84,10 @@ fn handle_confluence(state: Arc<AppState>) -> Router {
         Router::<Arc<AppState>>::new().route("/:token", get(find_one_profile_by_token));
 
     Router::<Arc<AppState>>::new()
-        .nest("/profile", profile_api)
-        .nest("/confluence", confluence_api)
-        .nest("/subscribe_source", subscribe_source_api)
-        .nest("/profile_token", profile_token_api)
+        .nest("/api/profile", profile_api)
+        .nest("/api/confluence", confluence_api)
+        .nest("/api/subscribe_source", subscribe_source_api)
+        .nest("/api/profile_token", profile_token_api)
         .fallback_service(handle_404.into_service())
         .with_state(state)
 }
