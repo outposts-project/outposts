@@ -1,0 +1,102 @@
+@import "../mixins";
+@import "../responsive";
+
+.layout-topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: calc(100% - var(--scrollbar-width, 0px));
+  z-index: 1100;
+  transition: background-color .5s, border-color .5s;
+  border-bottom: 1px solid transparent;
+
+  &.layout-topbar-sticky {
+    border-bottom: 1px solid var(--surface-border);
+    background-color: var(--topbar-sticky-bg);
+    backdrop-filter: blur(8px);
+  }
+}
+
+.layout-topbar-inner {
+  height: 4rem;
+  padding: 0 4rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  .layout-topbar-logo-container {
+    width: 250px;
+    margin-right: 4rem;
+    display: flex;
+    align-items: center;
+  }
+
+  .layout-topbar-logo {
+    display: inline-flex;
+    align-items: center;
+    color: var(--primary-color);
+    border-radius: var(--border-radius);
+    @include focus-visible();
+
+    svg {
+      width: 33px;
+      color: var(--text-color);
+      transform: translateY(-5%);
+    }
+
+    .layout-topbar-logo-text {
+      font-size: 24px;
+      font-weight: 800;
+      transform: scaleX(85%);
+      transform-origin: left center;
+
+      span:first-of-type {
+        color: var(--text-color);
+      }
+    }
+  }
+
+  .menu-button {
+    display: none;
+  }
+}
+
+@include screen-max {
+  .layout-topbar-inner {
+    max-width: 1728px;
+    margin: 0 auto;
+  }
+}
+
+@include screen-mid {
+  .layout-topbar-inner {
+    padding-left: 2rem;
+    padding-right: 2rem;
+
+    .menu-button {
+      display: block;
+    }
+
+    .layout-topbar-logo-container {
+      width: auto;
+      margin-right: 0;
+    }
+  }
+
+  .blocked-scroll {
+    overflow: hidden;
+    padding-right: var(--scrollbar-width);
+  }
+}
+
+@include screen-min {
+  .layout-topbar-inner {
+    padding-left: 1rem;
+    padding-right: 1rem;
+
+    .layout-topbar-logo {
+      transform: scale(0.8);
+      transform-origin: left center;
+    }
+  }
+}

@@ -1,0 +1,62 @@
+@import "../mixins";
+@import "../responsive";
+
+:host(.layout-sidebar) {
+  position: sticky;
+  left: 0;
+  top: 6rem;
+  height: calc(100vh - 9rem);
+  user-select: none;
+  transition: transform .4s cubic-bezier(.05, .74, .2, .99), opacity .3s;
+  display: flex;
+  flex-direction: column;
+  padding: 0 0 0 0;
+  flex: 0 0 250px;
+  margin-right: 4rem;
+  overflow: auto;
+
+  .logo {
+    display: flex;
+    justify-content: center;
+  }
+
+  nav {
+    padding: 0 1rem 0 0;
+    margin: 0;
+    flex-grow: 1;
+  }
+
+  .layout-menu {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+
+    > li {
+      margin-bottom: .25rem;
+    }
+  }
+}
+
+@include screen-mid {
+  :host(.layout-sidebar) {
+    top: 0;
+    left: 0;
+    position: fixed;
+    z-index: 1102;
+    height: 100%;
+    transform: translateX(-100%);
+    background-color: var(--mobile-menu-bg);
+    backdrop-filter: blur(20px);
+    width: 300px;
+    opacity: 0;
+
+    nav {
+      padding: 1rem 1rem;
+    }
+
+    &.active {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+}

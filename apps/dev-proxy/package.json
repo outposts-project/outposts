@@ -1,0 +1,14 @@
+{
+  "name": "dev-proxy",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "whistle run -p 8899 -t 10000 -M \"keepXFF|prod|capture\" -D . --no-global-plugins"
+  },
+  "keywords": [],
+  "license": "MIT",
+  "dependencies": {
+    "whistle": "^2.9.61"
+  }
+}

@@ -214,5 +214,6 @@ index.d.ts.map
 # Added by cargo
 
 /target
-/examples
+/examples/*
+!/examples/.gitkeep
 /.env

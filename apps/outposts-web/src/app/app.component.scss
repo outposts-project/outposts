@@ -1,0 +1,43 @@
+@import "./core/layout/responsive";
+@import "./core/layout/theme";
+
+.layout-wrapper {
+  background-color: var(--surface-ground);
+  background-image: var(--glow-image);
+  background-blend-mode: var(--glow-blend);
+  background-position: top center;
+  background-repeat: no-repeat;
+  background-size: auto 20rem;
+}
+
+.layout-content {
+  padding: 6rem 4rem 0 4rem;
+  display: flex;
+
+  .layout-content-slot {
+    flex: 1 1 auto;
+    width: 1%;
+    padding-top: .5rem;
+  }
+}
+
+@include screen-max {
+  .layout-content {
+    max-width: 1728px;
+    margin: 0 auto;
+  }
+}
+
+@include screen-mid {
+  .layout-content {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+@include screen-min {
+  .layout-content {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}

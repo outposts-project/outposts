@@ -1,0 +1,115 @@
+@import "../mixins";
+
+:host(.layout-menuitem-root) > button, :host(.layout-menuitem-root) > a {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  padding: .5rem 0;
+  color: var(--surface-900);
+  font-weight: 600;
+  transition: all .2s;
+  border-radius: var(--border-radius);
+
+  .menu-icon {
+    width: 2rem;
+    height: 2rem;
+    border-radius: var(--border-radius);
+    margin-right: .5rem;
+    border: 1px solid var(--surface-border);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all .2s;
+
+    i {
+      color: var(--surface-700);
+      transition: all .2s;
+    }
+  }
+
+  .menu-toggle-icon {
+    color: var(--surface-700);
+    margin-left: auto;
+  }
+
+  &:hover {
+    .menu-icon {
+      i {
+        color: var(--primary-color);
+      }
+    }
+
+    .menu-toggle-icon {
+      color: var(--surface-900);
+    }
+  }
+
+  &.router-link-active {
+    color: var(--primary-color);
+
+    > .menu-icon {
+      i {
+        color: var(--primary-color);
+      }
+    }
+  }
+
+  @include focus-visible(inset);
+}
+
+:host(.layout-menuitem-root) > div {
+  ol {
+    margin: 0 0 0 1rem;
+    padding: .25rem 0;
+    list-style: none;
+
+    li {
+      a {
+        color: var(--surface-700);
+        border-left: 1px solid var(--surface-border);
+        transition: all .2s;
+        font-weight: 450;
+        display: flex;
+        padding: .5rem .5rem .5rem 1rem;
+
+        &:focus-visible {
+          outline: 0 none;
+          box-shadow: inset var(--focus-ring);
+        }
+
+        &:hover {
+          color: var(--surface-900);
+          border-left-color: var(--surface-500);
+        }
+
+        &.router-link-active {
+          color: var(--primary-color);
+          border-left-color: var(--primary-color);
+        }
+      }
+
+      ol {
+        margin: 0;
+        padding: 0;
+      }
+
+      &:has(.menu-child-category) {
+        margin-top: 1rem;
+      }
+
+      &:has(.menu-child-category):first-child {
+        margin-top: 0;
+      }
+    }
+  }
+}
+
+.menu-child-category {
+  display: flex;
+  padding: .5rem .5rem .5rem 0;
+  font-size: .875rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--surface-900);
+  margin-bottom: .25rem;
+}

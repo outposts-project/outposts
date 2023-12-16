@@ -3,17 +3,24 @@ name = "confluence"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "confluence"
+path = "src/lib.rs"
 
+[[bin]]
+name = "confluence_server"
+path = "src/bin/server.rs"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
 addr = "0.15.6"
 anyhow = "1.0.75"
-axum = "0.6.20"
-axum-extra = "0.8.0"
+axum = "0.7.2"
+axum-extra = "0.9.0"
 biscuit = "0.7.0"
 chrono = { version = "0.4.31", features = ["serde"] }
 dotenvy = "0.15.7"
-itertools = "0.11.0"
+itertools = "0.12.0"
 reqwest = { version = "0.11.22", features = ["json"] }
 sea-orm = { version = "0.12.4", features = [
     "debug-print",
@@ -27,7 +34,7 @@ serde_yaml = "0.9.27"
 thiserror = { version = "1.0.50", features = [] }
 tokio = { version = "1.34.0", features = ["full"] }
 tower = { version = "0.4.13", features = ["util"] }
-tower-http = { version = "0.4.4", features = ["fs", "trace"] }
+tower-http = { version = "0.5.0", features = ["fs", "trace"] }
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.17", features = ["env-filter"] }
 uuid = { version = "1.5.0", features = [

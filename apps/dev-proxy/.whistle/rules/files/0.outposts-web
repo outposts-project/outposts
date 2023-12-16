@@ -1,0 +1,2 @@
+^https://apps.enfw.tech/*** http://localhost:4200/$1
+^wss://apps.enfw.tech/*** ws://localhost:4200/$1

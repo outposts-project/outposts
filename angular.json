@@ -1,0 +1,190 @@
+{
+  "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+  "version": 1,
+  "cli": {
+    "packageManager": "pnpm"
+  },
+  "newProjectRoot": "projects",
+  "projects": {
+    "outposts-web": {
+      "projectType": "application",
+      "schematics": {
+        "@schematics/angular:component": {
+          "style": "scss"
+        }
+      },
+      "root": "apps/outposts-web",
+      "sourceRoot": "apps/outposts-web/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular-builders/custom-webpack:browser",
+          "options": {
+            "customWebpackConfig": {
+              "path": "apps/outposts-web/custom-webpack.config.ts",
+              "replaceDuplicatePlugins": true
+            },
+            "outputPath": "dist/outposts-web",
+            "index": "apps/outposts-web/src/index.html",
+            "polyfills": [
+              "zone.js"
+            ],
+            "tsConfig": "apps/outposts-web/tsconfig.app.json",
+            "inlineStyleLanguage": "scss",
+            "assets": [
+              "apps/outposts-web/src/favicon.ico",
+              "apps/outposts-web/src/assets",
+              {
+                "glob": "**/*{.js,.css}",
+                "input": "node_modules/prismjs/components",
+                "output": "/assets/prismjs/components"
+              }
+            ],
+            "main": "apps/outposts-web/src/main.ts",
+            "styles": [
+              "apps/outposts-web/src/styles.scss",
+              {
+                "input": "node_modules/prism-themes/themes/prism-atom-dark.min.css",
+                "inject": true,
+                "bundleName": "prism"
+              },
+              {
+                "input": "node_modules/prismjs/plugins/command-line/prism-command-line.min.css",
+                "inject": true,
+                "bundleName": "prism"
+              },
+              {
+                "input": "node_modules/prismjs/plugins/line-highlight/prism-line-highlight.min.css",
+                "inject": true,
+                "bundleName": "prism"
+              },
+              {
+                "input": "node_modules/prismjs/plugins/line-numbers/prism-line-numbers.min.css",
+                "inject": true,
+                "bundleName": "prism"
+              },
+              {
+                "input": "node_modules/katex/dist/katex.min.css",
+                "inject": false,
+                "bundleName": "katex"
+              }
+            ],
+            "scripts": [
+              "node_modules/clipboard/dist/clipboard.min.js",
+              {
+                "input": "node_modules/prismjs/prism.js",
+                "inject": true,
+                "bundleName": "prism"
+              },
+              {
+                "input": "node_modules/prismjs/plugins/autoloader/prism-autoloader.min.js",
+                "inject": true,
+                "bundleName": "prism"
+              },
+              {
+                "input": "node_modules/prismjs/plugins/command-line/prism-command-line.min.js",
+                "inject": true,
+                "bundleName": "prism"
+              },
+              {
+                "input": "node_modules/prismjs/plugins/line-highlight/prism-line-highlight.min.js",
+                "inject": true,
+                "bundleName": "prism"
+              },
+              {
+                "input": "node_modules/prismjs/plugins/line-numbers/prism-line-numbers.min.js",
+                "inject": true,
+                "bundleName": "prism"
+              },
+              {
+                "input": "node_modules/mermaid/dist/mermaid.min.js",
+                "inject": false,
+                "bundleName": "mermaid"
+              },
+              {
+                "input": "node_modules/katex/dist/katex.min.js",
+                "inject": false,
+                "bundleName": "katex"
+              },
+              {
+                "input": "node_modules/katex/dist/contrib/auto-render.min.js",
+                "inject": false,
+                "bundleName": "katex"
+              }
+            ],
+            "allowedCommonJsDependencies": [
+              "camelcase-keys"
+            ]
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kb",
+                  "maximumError": "1mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "2kb",
+                  "maximumError": "4kb"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "fileReplacements": [
+                {
+                  "replace": "apps/outposts-web/src/environments/environment.ts",
+                  "with": "apps/outposts-web/src/environments/environment.development.ts"
+                }
+              ]
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular-builders/custom-webpack:dev-server",
+          "configurations": {
+            "production": {
+              "buildTarget": "outposts-web:build:production"
+            },
+            "development": {
+              "buildTarget": "outposts-web:build:development",
+              "disableHostCheck": true
+            }
+          },
+          "defaultConfiguration": "development"
+        },
+        "extract-i18n": {
+          "builder": "@angular-builders/custom-webpack:extract-i18n",
+          "options": {
+            "buildTarget": "outposts-web:build"
+          }
+        },
+        "test": {
+          "builder": "@angular-builders/custom-webpack:karma",
+          "options": {
+            "polyfills": [
+              "zone.js",
+              "zone.js/testing"
+            ],
+            "tsConfig": "apps/outposts-web/tsconfig.spec.json",
+            "inlineStyleLanguage": "scss",
+            "assets": [
+              "apps/outposts-web/src/favicon.ico",
+              "apps/outposts-web/src/assets"
+            ],
+            "styles": [
+              "apps/outposts-web/src/styles.scss"
+            ],
+            "scripts": []
+          }
+        }
+      }
+    }
+  }
+}
