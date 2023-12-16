@@ -4,18 +4,20 @@
 import {inject, Injectable, PLATFORM_ID} from "@angular/core";
 import {DocTableOfContentsItem, DocTableOfContentsLevel} from "@app/doc/defs/doc-table-of-contents.defs";
 import {DOCUMENT, isPlatformBrowser} from "@angular/common";
+import {WINDOW} from "@app/core/providers/window";
 
 @Injectable()
 export class DocTableOfContentsLoader {
   // There are some cases when default browser anchor scrolls a little above the
   // heading In that cases wrong item was selected. The value found by trial and
   // error.
-  readonly toleranceThreshold = 40;
+  readonly toleranceThreshold = 5;
 
   tableOfContentsItems: DocTableOfContentsItem[] = [];
 
   private readonly document = inject(DOCUMENT);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly window = inject(WINDOW);
 
   buildTableOfContents (docElement: Element): void {
     const headings = this.getHeadings(docElement);
@@ -37,8 +39,7 @@ export class DocTableOfContentsLoader {
     const updatedTopValues = new Map<string, number>();
 
     for (const heading of headings) {
-      const parentTop = heading.parentElement?.offsetTop ?? 0;
-      const top = Math.floor(parentTop + heading.offsetTop - this.toleranceThreshold);
+      const top = Math.floor(heading.getBoundingClientRect().top + window.scrollY - this.toleranceThreshold);
       updatedTopValues.set(heading.id, top);
     }
 
@@ -51,13 +52,17 @@ export class DocTableOfContentsLoader {
     if (!isPlatformBrowser(this.platformId)) {
       return 0;
     }
-    return Math.floor(heading.offsetTop > 0 ? heading.offsetTop : heading.getClientRects()[0]?.top) - this.toleranceThreshold
+    return Math.floor(heading.getBoundingClientRect().top + window.scrollY - this.toleranceThreshold)
   }
 
   private getHeadingTitle (heading: HTMLHeadingElement): string {
     const div = this.document.createElement('div');
     div.innerHTML = heading.innerHTML;
     return (div.textContent || '').trim();
+  }
+
+  isHeading (element?: Node): boolean {
+    return !!element && /^h[123456]$/i.test(element?.nodeName)
   }
 
   private getHeadings (element: Element): HTMLHeadingElement[] {

@@ -65,6 +65,9 @@ importers:
       monaco-editor:
         specifier: ^0.44.0
         version: 0.44.0
+      nanoid:
+        specifier: ^5.0.4
+        version: 5.0.4
       ngx-markdown:
         specifier: ^17.1.1
         version: 17.1.1(@angular/common@17.0.6)(@angular/core@17.0.6)(@angular/platform-browser@17.0.6)(marked@9.1.6)(rxjs@7.8.1)(zone.js@0.14.2)
@@ -6925,6 +6928,12 @@ packages:
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
     dev: true
+
+  /nanoid@5.0.4:
+    resolution: {integrity: sha512-vAjmBf13gsmhXSgBrtIclinISzFFy22WwCYoyilZlsrRXNIHSwgFQ1bEdjRwMT3aoadeIF6HMuDRlOxzfXV8ig==}
+    engines: {node: ^18 || >=20}
+    hasBin: true
+    dev: false
 
   /needle@3.3.0:
     resolution: {integrity: sha512-Kaq820952NOrLY/LVbIhPZeXtCGDBAPVgT0BYnoT3p/Nr3nkGXdvWXXA3zgy7wpAgqRULu9p/NvKiFo6f/12fw==}

@@ -1,0 +1,91 @@
+@import "../../../core/layout/responsive";
+
+
+:host {
+  position: sticky;
+  top: 6rem;
+  right: 0;
+  width: 14rem;
+  padding: 0;
+  margin: 0 0 0 4rem;
+  align-self: flex-start;
+  flex-shrink: 0;
+  flex-grow: 0;
+
+  @include screen-mid {
+    display: none;
+  }
+
+  aside {
+    nav {
+      max-height: calc(100vh - 15rem);
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    .doc-top-back {
+      margin: 2rem 0 2rem 1rem;
+      display: block;
+    }
+  }
+}
+
+.doc-section-nav {
+  list-style: none;
+  margin-block-start: 0;
+  margin-block-end: 0;
+  margin-inline-start: 0;
+  margin-inline-end: 0;
+  padding-inline-start: 0;
+}
+
+.doc-section-nav-item {
+  border-left: 1px solid var(--surface-border);
+  padding-left: 0.5rem;
+  transition: all .2s;
+
+  .doc-section-nav-item-content {
+    display: block; // to prevent overflow from the li parent
+    text-decoration: none;
+    padding: 0.25rem 1rem 0.25rem 1rem;
+    color: var(--surface-800);
+    font-weight: 400;
+    white-space: nowrap;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: all .2s;
+  }
+
+  &:hover {
+    border-left-color: var(--surface-500);
+  }
+
+  &.doc-section-nav-item-active {
+    border-color: var(--primary-color);
+
+    .doc-section-nav-item-content {
+      color: var(--primary-color);
+    }
+  }
+
+  &.doc-section-nav-item-h2 .doc-section-nav-item-content {
+    padding-left: 1.5rem;
+  }
+
+  &.doc-section-nav-item-h3 .doc-section-nav-item-content {
+    padding-left: 2rem;
+  }
+
+  &.doc-section-nav-item-h4 .doc-section-nav-item-content {
+    padding-left: 2.5rem;
+  }
+
+  &.doc-section-nav-item-h5 .doc-section-nav-item-content {
+    padding-left: 3rem;
+  }
+
+  &.doc-section-nav-item-h6 .doc-section-nav-item-content {
+    padding-left: 3.5rem;
+  }
+}

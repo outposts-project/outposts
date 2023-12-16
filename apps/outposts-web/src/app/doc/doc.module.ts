@@ -1,10 +1,9 @@
-/// <reference types="@types/prismjs" />
 import {inject, NgModule, PLATFORM_ID, SecurityContext} from '@angular/core';
 import {CommonModule, isPlatformBrowser} from '@angular/common';
 import {MarkdownModule, MARKED_OPTIONS} from 'ngx-markdown';
 import {HttpClient, HttpClientModule} from "@angular/common/http";
-import {DocComponent} from "./components/doc/doc.component";
-import { gfmHeadingId } from 'marked-gfm-heading-id';
+import {DocSectionComponent} from "@app/doc/components/section/doc-section.component";
+import {gfmHeadingId} from 'marked-gfm-heading-id';
 import {DocService} from "./services/doc.service";
 import {SkeletonModule} from "primeng/skeleton";
 import {StyleClassModule} from "primeng/styleclass";
@@ -14,27 +13,30 @@ import {ToastModule} from "primeng/toast";
 import {MessageService} from "primeng/api";
 import {DocClipboardButtonComponent} from "@app/doc/components/clipboard-button/doc-clipboard-button.component";
 import {DocTableOfContentsLoader} from "@app/doc/services/doc-table-of-contents-loader.service";
-import {DocTableOfContentsScrollSpy} from "@app/doc/services/doc-table-of-contents-scroll-spy.service";
+import {DocTableOfContentsSpy} from "@app/doc/services/doc-table-of-contents-spy.service";
 import {DocTableOfContentsComponent} from "@app/doc/components/table-of-contents/doc-table-of-contents.component";
 import {RouterLink} from "@angular/router";
 import {WINDOW} from "@app/core/providers/window";
+import {DocLayoutComponent} from "@app/doc/components/layout/doc-layout.component";
 
 @NgModule({
   providers: [
     DocService,
     MessageService,
     DocTableOfContentsLoader,
-    DocTableOfContentsScrollSpy
+    DocTableOfContentsSpy
   ],
   declarations: [
-    DocComponent,
+    DocSectionComponent,
     DocClipboardButtonComponent,
-    DocTableOfContentsComponent
+    DocTableOfContentsComponent,
+    DocLayoutComponent
   ],
   exports: [
-    DocComponent,
+    DocSectionComponent,
     DocClipboardButtonComponent,
-    DocTableOfContentsComponent
+    DocTableOfContentsComponent,
+    DocLayoutComponent
   ],
   imports: [
     CommonModule,

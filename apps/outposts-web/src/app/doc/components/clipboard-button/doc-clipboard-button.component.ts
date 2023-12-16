@@ -5,7 +5,7 @@ import {take} from "rxjs/operators";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 
 @Component({
-  selector: 'app-doc-clipboard-button',
+  selector: 'app-doc-section-clipboard-button',
   template: `
       <p-toast></p-toast>
       <p-button icon="pi pi-copy" severity="secondary" (click)="onClick()"></p-button>
@@ -17,7 +17,7 @@ export class DocClipboardButtonComponent {
   private readonly destroyRef = inject(DestroyRef);
 
   onClick() {
-    this.t.selectTranslateObject<{ title: string, detail: string }>('doc.clipboard_copied_toast')
+    this.t.selectTranslateObject<{ title: string, detail: string }>('layout-section.clipboard_copied_toast')
       .pipe(
         take(1),
         takeUntilDestroyed(this.destroyRef)

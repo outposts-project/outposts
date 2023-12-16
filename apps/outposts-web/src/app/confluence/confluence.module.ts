@@ -3,6 +3,7 @@ import {CommonModule} from '@angular/common';
 import {DashboardComponent} from "./dashboard/dashboard.component";
 import {ConfluenceRoutingModule} from "./confluence-rounting.module";
 import {DocModule} from "@app/doc/doc.module";
+import {ScrollTopModule} from "primeng/scrolltop";
 
 @NgModule({
   declarations: [
@@ -11,7 +12,8 @@ import {DocModule} from "@app/doc/doc.module";
   imports: [
     CommonModule,
     ConfluenceRoutingModule,
-    DocModule
+    DocModule,
+    ScrollTopModule
   ]
 })
 export class ConfluenceModule { }

@@ -8,9 +8,9 @@ import {DomHandler} from "primeng/dom";
   styleUrl: './app.component.scss'
 })
 export class AppComponent {
-  readonly title = 'outposts-web';
-
   private readonly configService = inject(AppConfigService);
+
+  readonly title = 'outposts-web';
 
   readonly colorSchema = signal('light');
 

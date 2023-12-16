@@ -1,14 +1,23 @@
-import {Component, DestroyRef, inject, Input, OnInit} from "@angular/core";
+import {
+  Component,
+  DestroyRef,
+  inject,
+  Input,
+  OnInit
+} from "@angular/core";
 import {DocService} from "../../services/doc.service";
 import {
   combineLatest,
-  distinctUntilChanged, EMPTY,
+  distinctUntilChanged,
+  EMPTY,
   filter,
   map,
   Observable,
   of,
-  shareReplay, startWith,
-  switchMap, throwError
+  shareReplay,
+  startWith,
+  switchMap,
+  throwError
 } from "rxjs";
 import {Observe} from "@app/rx";
 import {isNil} from "lodash-es";
@@ -17,8 +26,8 @@ import {DocClipboardButtonComponent} from "@app/doc/components/clipboard-button/
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 
 @Component({
-  selector: 'app-doc',
-  templateUrl: './doc.component.html',
+  selector: 'app-doc-section',
+  templateUrl: './doc-section.component.html',
   styles: `.doc-skeleton {
     max-height: 100%;
   }`,
@@ -27,7 +36,7 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
     '../../styles/markdown-themes/github-markdown-light.css'
   ]
 })
-export class DocComponent implements OnInit {
+export class DocSectionComponent implements OnInit {
   private readonly docService = inject(DocService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -113,7 +122,13 @@ export class DocComponent implements OnInit {
   );
 
   katexOptions: KatexOptions = {
-    displayMode: true
+    // fix error trans
+    // @ts-ignore
+    preProcess: (math: string) => {
+      console.log(JSON.stringify(math));
+      return math
+        .replace(/\\\r?\n/g, '\\\\\n');
+    },
   }
 
   detectMermaid(data: string) {
@@ -121,7 +136,7 @@ export class DocComponent implements OnInit {
   }
 
   detectKatex(data: string) {
-    return /\$\$|katex/.test(data)
+    return /\$\$[^$]+?\$\$|\$[^\n\r$]+?\$|katex/.test(data)
   }
 
   ngOnInit(): void {
@@ -143,7 +158,7 @@ export class DocComponent implements OnInit {
     ).pipe(
       switchMap(([data, src]) => {
         if (isNil(data) && isNil(src)) {
-          return throwError(() => new Error('DocComponent Error: can not set both src and data'))
+          return throwError(() => new Error('DocSectionComponent Error: can not set both src and data'))
         }
         return EMPTY;
       }),
