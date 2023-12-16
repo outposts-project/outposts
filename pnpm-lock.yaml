@@ -41,9 +41,6 @@ importers:
       '@logto/js':
         specifier: ^2.1.3
         version: 2.1.3
-      '@ngneat/until-destroy':
-        specifier: ^10.0.0
-        version: 10.0.0(@angular/core@17.0.6)(rxjs@7.8.1)
       clipboard:
         specifier: ^2.0.11
         version: 2.0.11
@@ -2359,17 +2356,6 @@ packages:
       tslib: 2.6.2
     transitivePeerDependencies:
       - typescript
-    dev: false
-
-  /@ngneat/until-destroy@10.0.0(@angular/core@17.0.6)(rxjs@7.8.1):
-    resolution: {integrity: sha512-xXFAabQ4YVJ82LYxdgUlaKZyR3dSbxqG3woSyaclzxfCgWMEDweCcM/GGYbNiHJa0WwklI98RXHvca+UyCxpeg==}
-    peerDependencies:
-      '@angular/core': '>=13'
-      rxjs: ^6.4.0 || ^7.0.0
-    dependencies:
-      '@angular/core': 17.0.6(rxjs@7.8.1)(zone.js@0.14.2)
-      rxjs: 7.8.1
-      tslib: 2.6.2
     dev: false
 
   /@ngtools/webpack@17.0.6(@angular/compiler-cli@17.0.6)(typescript@5.2.2)(webpack@5.89.0):

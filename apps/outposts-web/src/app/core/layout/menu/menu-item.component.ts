@@ -1,5 +1,5 @@
 import {CommonModule} from '@angular/common';
-import {Component, Input} from '@angular/core';
+import {Component, inject, Input} from '@angular/core';
 import {Router, RouterModule} from '@angular/router';
 import {StyleClassModule} from 'primeng/styleclass';
 import type {MenuEntry} from './menu.defs';
@@ -20,8 +20,7 @@ export class MenuItemComponent {
 
   @Input() root: boolean = true;
 
-  constructor(private router: Router) {
-  }
+  private readonly router = inject(Router);
 
   isActiveRootMenuItem(menuitem: MenuEntry): boolean {
     try {

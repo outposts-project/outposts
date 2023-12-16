@@ -1,5 +1,5 @@
-import {Component, signal} from '@angular/core';
-import {AppConfigService} from "./core/app-config.service";
+import {Component, inject, signal} from '@angular/core';
+import {AppConfigService} from "./core/servces/app-config.service";
 import {DomHandler} from "primeng/dom";
 
 @Component({
@@ -10,8 +10,7 @@ import {DomHandler} from "primeng/dom";
 export class AppComponent {
   readonly title = 'outposts-web';
 
-  constructor(private readonly configService: AppConfigService) {
-  }
+  private readonly configService = inject(AppConfigService);
 
   readonly colorSchema = signal('light');
 

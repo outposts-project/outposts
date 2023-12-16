@@ -7,6 +7,10 @@ declare global {
       APP_VERSION: string
     }
   }
+
+  interface Window {
+    Prism?: typeof import('Prismjs');
+  }
 }
 
 export {};

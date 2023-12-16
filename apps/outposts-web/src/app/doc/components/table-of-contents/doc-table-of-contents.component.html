@@ -1,0 +1,27 @@
+<aside>
+  <nav>
+    <ul class="doc-section-nav-list">
+      @for (item of tableOfContentsItems(); track item.id) {
+        <li class="doc-section-nav-item"
+            [class.doc-section-nav-item-h1]="item.level === TableOfContentsLevel.H1"
+            [class.doc-section-nav-item-h2]="item.level === TableOfContentsLevel.H2"
+            [class.doc-section-nav-item-h3]="item.level === TableOfContentsLevel.H3"
+            [class.doc-section-nav-item-h4]="item.level === TableOfContentsLevel.H4"
+            [class.doc-section-nav-item-h5]="item.level === TableOfContentsLevel.H5"
+            [class.doc-section-nav-item-h6]="item.level === TableOfContentsLevel.H6"
+        >
+          <a
+            routerLink="."
+            [fragment]="item.id"
+            [class.doc-section-nav-item-active]="item.id === activeItemId()"
+          >
+            {{ item.title }}
+          </a>
+        </li>
+      }
+    </ul>
+  </nav>
+  @if (shouldDisplayScrollOnTop()) {
+    <p-button icon="pi pi-arrow-up" [rounded]="true" [text]="true" [raised]="true"></p-button>
+  }
+</aside>

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import type { AppState } from './app-state.defs';
+import type { AppState } from '../defs/app-state.defs';
 
 @Injectable({
   providedIn: 'root'

@@ -3,7 +3,7 @@ import {
   Component,
   computed,
   ElementRef,
-  HostListener,
+  HostListener, inject,
   Inject, Input,
   OnDestroy,
   Renderer2,
@@ -11,10 +11,11 @@ import {
 } from '@angular/core';
 import {CommonModule, DOCUMENT} from "@angular/common";
 import {Router, RouterLink} from "@angular/router";
-import {AppConfigService} from "../../app-config.service";
+import {AppConfigService} from "../../servces/app-config.service";
 import {DomHandler} from "primeng/dom";
 import {FormsModule} from "@angular/forms";
 import {StyleClassModule} from "primeng/styleclass";
+import {WINDOW} from "@app/core/providers/window";
 
 @Component({
   selector: 'app-topbar',
@@ -33,18 +34,16 @@ export class TopbarComponent implements OnDestroy {
 
   scrollListener: VoidFunction | undefined;
 
-  private window: Window;
+  private readonly document = inject(DOCUMENT);
+  private readonly el = inject(ElementRef);
+  private readonly render = inject(Renderer2);
+  private readonly router = inject(Router);
+  private readonly configService = inject(AppConfigService);
+  private readonly window = inject(WINDOW);
 
 
   constructor(
-    @Inject(DOCUMENT) private document: Document,
-    private el: ElementRef,
-    private render: Renderer2,
-    private router: Router,
-    private configService: AppConfigService
   ) {
-    this.window = this.document.defaultView as Window;
-
     afterNextRender(() => {
       this.bindScrollListener();
     })

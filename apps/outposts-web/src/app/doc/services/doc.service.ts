@@ -1,12 +1,10 @@
-import {Injectable} from "@angular/core";
+import {inject, Injectable} from "@angular/core";
 import {combineLatest, forkJoin, map, Observable, tap} from "rxjs";
-import {AppAssetService} from "@app/core/app-asset.service";
+import {AppAssetService} from "@app/core/servces/app-asset.service";
 
 @Injectable()
 export class DocService {
-  constructor(
-    private assetService: AppAssetService
-  ) {}
+  private readonly assetService = inject(AppAssetService);
 
   loadMermaid (): Observable<void> {
     return this.assetService.loadScript('mermaid.js') as Observable<any>
@@ -34,5 +32,9 @@ export class DocService {
     ).pipe(
       map(([scriptLoaded, styleLoaded]) => scriptLoaded && styleLoaded)
     )
+  }
+
+  loadMarkdown (url: string): Observable<string> {
+    return this.assetService.loadPlainText(url);
   }
 }

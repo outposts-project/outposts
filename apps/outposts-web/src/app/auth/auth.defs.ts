@@ -1,4 +1,4 @@
-import {Injectable, Injector} from "@angular/core";
+import {inject, Injectable, Injector} from "@angular/core";
 import {Router} from "@angular/router";
 import {Location} from "@angular/common";
 
@@ -69,14 +69,8 @@ export interface AppState {
   providedIn: 'root',
 })
 export class AbstractNavigator {
-  private readonly router?: Router;
-
-  constructor(private location: Location, injector: Injector) {
-    try {
-      this.router = injector.get(Router);
-    } catch {
-    }
-  }
+  private readonly location = inject(Location);
+  private readonly router = inject(Router);
 
   /**
    * Navigates to the specified url. The router will be used if one is available, otherwise it falls back

@@ -1,10 +1,9 @@
-import {Component} from '@angular/core';
+import {Component, DestroyRef, inject} from '@angular/core';
 import {MessageService} from "primeng/api";
 import {TranslocoService} from "@ngneat/transloco";
-import {UntilDestroy, untilDestroyed} from "@ngneat/until-destroy";
 import {take} from "rxjs/operators";
+import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 
-@UntilDestroy()
 @Component({
   selector: 'app-doc-clipboard-button',
   template: `
@@ -13,17 +12,15 @@ import {take} from "rxjs/operators";
   `,
 })
 export class DocClipboardButtonComponent {
-  constructor(
-    private messageService: MessageService,
-    private t: TranslocoService
-  ) {
-  }
+  private readonly messageService = inject(MessageService);
+  private readonly t = inject(TranslocoService);
+  private readonly destroyRef = inject(DestroyRef);
 
   onClick() {
     this.t.selectTranslateObject<{ title: string, detail: string }>('doc.clipboard_copied_toast')
       .pipe(
         take(1),
-        untilDestroyed(this)
+        takeUntilDestroyed(this.destroyRef)
       ).subscribe(
       (translation) => {
         this.messageService.add({

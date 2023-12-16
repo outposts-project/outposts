@@ -1,4 +1,4 @@
-import {Injectable, OnDestroy} from '@angular/core';
+import {inject, Injectable, OnDestroy} from '@angular/core';
 import LogtoClient from '@logto/browser'
 import {environment} from "../../environments/environment";
 import {
@@ -21,9 +21,9 @@ import {AbstractNavigator, AppState, SignInOptions, SignOutOptions, UserAuthStat
 })
 export class AuthService<TAppState extends AppState = AppState> implements OnDestroy {
   protected logtoClient: LogtoClient;
+  private readonly navigator = inject(AbstractNavigator);
 
   constructor(
-    private navigator: AbstractNavigator,
   ) {
     this.logtoClient = new LogtoClient({
       endpoint: environment.AUTH_ENDPOINT,

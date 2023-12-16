@@ -1,4 +1,4 @@
-import {afterNextRender, Component, ElementRef, OnDestroy} from '@angular/core';
+import {afterNextRender, Component, DestroyRef, ElementRef, inject} from '@angular/core';
 import {PrimeIcons} from "primeng/api";
 import {ButtonModule} from "primeng/button";
 import {StyleClassModule} from "primeng/styleclass";
@@ -6,13 +6,12 @@ import {MenuRoot} from "./menu.defs";
 import {NavigationEnd, Router} from "@angular/router";
 import {DomHandler} from "primeng/dom";
 import {MenuItemComponent} from "./menu-item.component";
-import {map, Subscription, timer} from "rxjs";
-import {AppConfigService} from "../../app-config.service";
+import {map, timer} from "rxjs";
+import {AppConfigService} from "../../servces/app-config.service";
 import {CommonModule} from "@angular/common";
 import {AutoCompleteModule} from "primeng/autocomplete";
-import {UntilDestroy, untilDestroyed} from "@ngneat/until-destroy";
+import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 
-@UntilDestroy()
 @Component({
   selector: 'app-menu',
   standalone: true,
@@ -30,36 +29,38 @@ import {UntilDestroy, untilDestroyed} from "@ngneat/until-destroy";
     '[class.active]': 'isActive'
   },
 })
-export class MenuComponent implements OnDestroy {
-  visible = true;
-  menu!: MenuRoot;
+export class MenuComponent {
+  private readonly configService = inject(AppConfigService);
+  private readonly el = inject(ElementRef);
+  private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
 
-  private routerSubscription?: Subscription;
+  // visible = true;
 
-  constructor(
-    private configService: AppConfigService,
-    private el: ElementRef,
-    private router: Router,
-  ) {
-    this.menu = [{
-      name: 'confluence',
-      icon: PrimeIcons.TABLE,
-      children: [
-        {
-          name: 'dashboard',
-          routerLink: '/confluence/dashboard'
-        }
-      ]
-    }]
+  menu: MenuRoot = [{
+    name: 'confluence',
+    icon: PrimeIcons.TABLE,
+    children: [
+      {
+        name: 'dashboard',
+        routerLink: '/confluence/dashboard'
+      }
+    ]
+  }];
 
+  constructor() {
     afterNextRender(() => {
       timer(1)
         .pipe(
           map(this.scrollToActiveItem.bind(this)),
-          untilDestroyed(this)
+          takeUntilDestroyed(this.destroyRef)
         ).subscribe();
 
-      this.routerSubscription = this.router.events.subscribe((event) => {
+      this.router
+        .events
+        .pipe(
+          takeUntilDestroyed(this.destroyRef)
+        ).subscribe((event) => {
         if (event instanceof NavigationEnd && this.configService.state.menuActive) {
           this.configService.hideMenu();
           DomHandler.unblockBodyScroll('blocked-scroll');
@@ -68,26 +69,19 @@ export class MenuComponent implements OnDestroy {
     });
   }
 
-  scrollToActiveItem () {
+  scrollToActiveItem() {
     let activeItem = DomHandler.findSingle(this.el.nativeElement, '.router-link-active');
     if (activeItem && !this.isInViewport(activeItem)) {
-      activeItem.scrollIntoView({ block: 'center' });
+      activeItem.scrollIntoView({block: 'center'});
     }
   }
 
-  get isActive (): boolean {
+  get isActive(): boolean {
     return !!this.configService.state.menuActive;
   }
 
-  isInViewport (element: HTMLElement) {
+  isInViewport(element: HTMLElement) {
     const rect = element.getBoundingClientRect();
     return rect.top >= 0 && rect.left >= 0 && rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) && rect.right <= (window.innerWidth || document.documentElement.clientWidth);
-  }
-
-  ngOnDestroy() {
-    if (this.routerSubscription) {
-      this.routerSubscription.unsubscribe();
-      this.routerSubscription = undefined;
-    }
   }
 }

@@ -10,6 +10,8 @@ import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
 import {AppFooterComponent} from "./core/layout/footer/footer.component";
 import { HttpClientModule } from '@angular/common/http';
 import { TranslocoRootModule } from './transloco-root.module';
+import {WINDOW, windowProvider} from "@app/core/providers/window";
+import {DOCUMENT} from "@angular/common";
 
 @NgModule({
   declarations: [
@@ -27,7 +29,13 @@ import { TranslocoRootModule } from './transloco-root.module';
     AppFooterComponent,
     TranslocoRootModule
   ],
-  providers: [],
+  providers: [
+    {
+      provide: WINDOW,
+      useFactory: windowProvider,
+      deps: [DOCUMENT]
+    }
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule {
