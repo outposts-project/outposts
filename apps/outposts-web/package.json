@@ -5,11 +5,10 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "build:stats": "ng build --stats-json",
+    "analyze": "webpack-bundle-analyzer ../../dist/outposts-web/stats.json",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
-  "private": true,
-  "dependencies": {
-    "@ngneat/transloco": "6.0.4"
-  }
+  "private": true
 }

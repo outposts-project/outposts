@@ -13,5 +13,8 @@ declare module '*?asset-inline' {
   export default dataURI;
 }
 
-
+declare module '*.md' {
+  const content: string;
+  export default content;
+}
 

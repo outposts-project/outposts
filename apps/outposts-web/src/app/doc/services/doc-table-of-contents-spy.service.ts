@@ -2,8 +2,18 @@ import {inject, Injectable, DestroyRef, NgZone, EnvironmentInjector, signal, aft
 import {DocTableOfContentsLoader} from "@app/doc/services/doc-table-of-contents-loader.service";
 import {DOCUMENT, ViewportScroller} from "@angular/common";
 import {WINDOW} from "@app/core/providers/window";
-import {auditTime, debounceTime, filter, fromEvent, fromEventPattern, map, startWith, tap} from "rxjs";
-import {RESIZE_EVENT_DELAY, SCROLL_EVENT_DELAY} from "@app/core/defs/delay";
+import {
+  auditTime,
+  BehaviorSubject,
+  debounceTime,
+  filter,
+  fromEvent,
+  fromEventPattern,
+  map,
+  startWith,
+  tap
+} from "rxjs";
+import {RESIZE_EVENT_DELAY, SCROLL_EVENT_DELAY, SCROLL_FINISH_DELAY} from "@app/core/defs/delay";
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {shouldReduceMotion} from "@app/core/utils/animation.utils";
 import {Router, Scroll} from "@angular/router";
@@ -18,10 +28,10 @@ export class DocTableOfContentsSpy {
   private readonly ngZone = inject(NgZone);
   private readonly viewportScroller = inject(ViewportScroller);
   private readonly injector = inject(EnvironmentInjector);
+  private readonly router = inject(Router);
   private contentSourceElement: HTMLElement | null = null;
   private tocElement: HTMLElement | null = null;
   private lastContentWidth = 0;
-  private readonly router = inject(Router);
 
   activeItemId = signal<string | null>(null);
   scrollbarThumbOnTop = signal(true);
@@ -47,55 +57,54 @@ export class DocTableOfContentsSpy {
 
   scrollToSection(id: string): void {
     if (shouldReduceMotion()) {
-      this.offsetToSection(id);
+      this.offsetToSection(id, 'instant');
     } else {
-      const body = this.document.body;
-      const section = this.document.getElementById(id);
-      if (body && section) {
-        const bodyTop = body.getBoundingClientRect().top;
-        const sectionTop = section.getBoundingClientRect().top;
-        const sectionScrollY = sectionTop - bodyTop - this.getTocTop();
-        const prev = this.viewportScroller.getScrollPosition();
-        this.window.scrollTo({
-          left: prev[0],
-          top: sectionScrollY,
-          behavior: 'smooth'
-        });
-        // We don't want to set the active item here, it would mess up the animation
-        // The scroll event handler will handle it for us
-      }
+      this.offsetToSection(id, 'smooth')
     }
   }
 
-  private offsetToSection(id: string) {
+  private offsetToSection(id: string, preferBehavior: 'instant' | 'smooth' = 'instant'): void {
     const body = this.document.body;
     const section = this.document.getElementById(id);
     if (body && section) {
       const bodyTop = body.getBoundingClientRect().top;
       const sectionTop = section.getBoundingClientRect().top;
       const sectionScrollY = sectionTop - bodyTop - this.getTocTop();
-      const prev = this.viewportScroller.getScrollPosition();
-      this.window.scrollTo({
-        left: prev[0],
-        top: sectionScrollY,
-        behavior: 'instant'
-      });
+      const prevX = this.viewportScroller.getScrollPosition()[0];
+      const realBehavior = preferBehavior === 'smooth' && 'scrollBehavior' in this.document.documentElement.style ? 'smooth' : 'instant';
+
+      if (realBehavior === 'instant') {
+        this.document.body.scrollTop = sectionScrollY;
+        if (this.document.documentElement) {
+          this.document.documentElement.scrollTop = sectionScrollY;
+        }
+      } else {
+        this.window.scrollTo({
+          left: prevX,
+          top: sectionScrollY,
+          behavior: 'smooth'
+        });
+      }
+
+      if (realBehavior === 'instant') {
+        // Here we need to set the active item manually because scroll events might not be fired
+        this.activeItemId.set(id);
+      }
     }
-    // Here we need to set the active item manually because scroll events might not be fired
-    this.activeItemId.set(id);
   }
 
   private setAnchorScrollingHandlers() {
     this.router.events
       .pipe(
         filter((e): e is Scroll => e instanceof Scroll),
-        takeUntilDestroyed(this.destroyRef)
-      ).subscribe(e => {
-      const id = e.anchor;
-      if (id && this.tableOfContentsLoader.tableOfContentsItems.some(item => item.id === id)) {
-        this.scrollToSection(id);
-      }
-    })
+        tap((e) => {
+          const id = e.anchor;
+          if (id && this.tableOfContentsLoader.tableOfContentsItems.some(item => item.id === id)) {
+            this.scrollToSection(id);
+          }
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      ).subscribe()
   }
 
   private setMutationEventHandlers() {

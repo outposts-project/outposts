@@ -1,20 +1,23 @@
 #![feature(slice_take)]
 
 use axum::{
-    handler::HandlerWithoutStateExt, http::StatusCode, middleware, routing::delete, routing::get,
-    routing::post, routing::put, Router,
+    handler::HandlerWithoutStateExt, http::Method, http::StatusCode, middleware, routing::delete,
+    routing::get, routing::post, routing::put, Router,
 };
 use confluence::api::{
     create_one_confluence, create_one_profile, create_one_subscribe_source, delete_one_confluence,
     delete_one_profile, delete_one_subscribe_source, find_many_confluences, find_one_confluence,
-    find_one_profile_by_token, update_one_confluence, update_one_subscribe_source, AppState,
+    find_one_profile_as_subscription_by_token, mux_one_confluence, sync_one_confluence,
+    sync_one_subscribe_source, update_one_confluence, update_one_subscribe_source, AppState,
 };
 use confluence::auth::auth;
 use confluence::config::{AppConfig, AuthConfig};
-use sea_orm::Database;
+use sea_orm::{ConnectOptions, Database};
 use std::env;
+use std::net::IpAddr;
 use std::net::SocketAddr;
 use std::sync::Arc;
+use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -23,7 +26,7 @@ async fn main() {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "confluence=debug,tower_http=debug".into()),
+                .unwrap_or_else(|_| "confluence=info,tower_http=info".into()),
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
@@ -32,17 +35,26 @@ async fn main() {
 
     let db_url =
         env::var("CONFLUENCE_DATABASE_URL").expect("CONFLUENCE_DATABASE_URL is not set in env");
-    let conn = Database::connect(db_url.clone())
+
+    let mut opt = ConnectOptions::new(db_url.clone());
+    opt.max_connections(100)
+        .min_connections(5)
+        .sqlx_logging(true)
+        .sqlx_logging_level(log::LevelFilter::Debug);
+
+    let conn = Database::connect(opt)
         .await
         .expect("Database connection failed");
 
     let auth_type = env::var("AUTH_TYPE").expect("AUTH_TYPE is not set in env");
+    let host = env::var("CONFLUENCE_HOST").unwrap_or_else(|_| String::from("0.0.0.0"));
     let port = env::var("CONFLUENCE_PORT").map_or(4001u16, |p| p.parse::<u16>().unwrap());
 
-    let state = Arc::new(AppState {
+    let state = Arc::new(AppState::new(
         conn,
-        config: AppConfig {
+        AppConfig {
             port,
+            host,
             database_url: db_url,
             auth: match &auth_type as &str {
                 "DEV_NO_AUTH" => {
@@ -54,8 +66,8 @@ async fn main() {
                     let issuer = env::var("AUTH_ISSUER").expect("AUTH_ISSUER is not set in env");
                     let jwks_uri =
                         env::var("AUTH_JWKS_URI").expect("AUTH_JWKS_URI is not set in env");
-                    let audience = env::var("CONFLUENCE_AUDIENCE")
-                        .expect("CONFLUENCE_AUDIENCE is not set in env");
+                    let audience = env::var("CONFLUENCE_API_ENDPOINT")
+                        .expect("CONFLUENCE_API_ENDPOINT is not set in env");
                     AuthConfig::JWT {
                         jwks_uri,
                         issuer,
@@ -67,7 +79,7 @@ async fn main() {
                 }
             },
         },
-    });
+    ));
 
     tokio::join!(serve(handle_confluence(state.clone()), state));
 }
@@ -77,7 +89,6 @@ async fn handle_404() -> (StatusCode, &'static str) {
 }
 
 fn handle_confluence(state: Arc<AppState>) -> Router {
-    // serve the file in the "assets" directory under `/assets`
     let confluence_api = Router::<Arc<AppState>>::new()
         .route("/", get(find_many_confluences).post(create_one_confluence))
         .route(
@@ -86,6 +97,8 @@ fn handle_confluence(state: Arc<AppState>) -> Router {
                 .delete(delete_one_confluence)
                 .put(update_one_confluence),
         )
+        .route("/mux/:id", post(mux_one_confluence))
+        .route("/sync/:id", post(sync_one_confluence))
         .layer(middleware::from_fn_with_state(state.clone(), auth));
 
     let profile_api = Router::<Arc<AppState>>::new()
@@ -99,10 +112,11 @@ fn handle_confluence(state: Arc<AppState>) -> Router {
             "/:id",
             put(update_one_subscribe_source).delete(delete_one_subscribe_source),
         )
+        .route("/sync/:id", post(sync_one_subscribe_source))
         .layer(middleware::from_fn_with_state(state.clone(), auth));
 
-    let profile_token_api =
-        Router::<Arc<AppState>>::new().route("/:token", get(find_one_profile_by_token));
+    let profile_token_api = Router::<Arc<AppState>>::new()
+        .route("/:token", get(find_one_profile_as_subscription_by_token));
 
     Router::<Arc<AppState>>::new()
         .nest("/api/profile", profile_api)
@@ -114,10 +128,21 @@ fn handle_confluence(state: Arc<AppState>) -> Router {
 }
 
 async fn serve(app: Router, state: Arc<AppState>) {
-    let addr = SocketAddr::from(([127, 0, 0, 1], state.config.port));
+    let addr = SocketAddr::from((
+        state.config.host.parse::<IpAddr>().unwrap(),
+        state.config.port,
+    ));
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
-    tracing::debug!("listening on {}", listener.local_addr().unwrap());
-    axum::serve(listener, app.layer(TraceLayer::new_for_http()))
+    tracing::info!("listening on {}", listener.local_addr().unwrap());
+
+    let cors = CorsLayer::new()
+        // allow `GET` and `POST` when accessing the resource
+        .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
+        // allow requests from any origin
+        .allow_origin(Any)
+        .allow_headers(Any);
+
+    axum::serve(listener, app.layer(cors).layer(TraceLayer::new_for_http()))
         .await
         .unwrap();
 }

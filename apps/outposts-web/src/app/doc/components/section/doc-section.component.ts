@@ -125,7 +125,6 @@ export class DocSectionComponent implements OnInit {
     // fix error trans
     // @ts-ignore
     preProcess: (math: string) => {
-      console.log(JSON.stringify(math));
       return math
         .replace(/\\\r?\n/g, '\\\\\n');
     },

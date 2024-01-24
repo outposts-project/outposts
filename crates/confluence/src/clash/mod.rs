@@ -32,9 +32,9 @@ pub struct ProxyGroup {
     pub name: String,
     #[serde(rename = "type")]
     pub kind: ProxyGroupKind,
-    pub proxies: Vec<String>,
     #[serde(flatten)]
     pub others: HashMap<String, Value>,
+    pub proxies: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Ord, PartialOrd)]
@@ -42,12 +42,12 @@ pub struct Rule(pub String);
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct ClashConfig {
+    #[serde(flatten)]
+    pub others: HashMap<String, Value>,
     pub proxies: Vec<Proxy>,
     #[serde(rename = "proxy-groups")]
     pub proxy_groups: Vec<ProxyGroup>,
     pub rules: Vec<Rule>,
-    #[serde(flatten)]
-    pub others: HashMap<String, Value>,
 }
 
 #[cfg(test)]

@@ -1,36 +1,48 @@
 {
   "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
-  "version": 1,
   "cli": {
+    "analytics": false,
     "packageManager": "pnpm"
   },
   "newProjectRoot": "projects",
   "projects": {
     "outposts-web": {
-      "projectType": "application",
-      "schematics": {
-        "@schematics/angular:component": {
-          "style": "scss"
-        }
-      },
-      "root": "apps/outposts-web",
-      "sourceRoot": "apps/outposts-web/src",
-      "prefix": "app",
       "architect": {
         "build": {
           "builder": "@angular-builders/custom-webpack:browser",
-          "options": {
-            "customWebpackConfig": {
-              "path": "apps/outposts-web/custom-webpack.config.ts",
-              "replaceDuplicatePlugins": true
+          "configurations": {
+            "development": {
+              "extractLicenses": false,
+              "fileReplacements": [
+                {
+                  "replace": "apps/outposts-web/src/environments/environment.ts",
+                  "with": "apps/outposts-web/src/environments/environment.development.ts"
+                }
+              ],
+              "optimization": false,
+              "sourceMap": true
             },
-            "outputPath": "dist/outposts-web",
-            "index": "apps/outposts-web/src/index.html",
-            "polyfills": [
-              "zone.js"
+            "production": {
+              "budgets": [
+                {
+                  "maximumError": "2mb",
+                  "maximumWarning": "1mb",
+                  "type": "initial"
+                },
+                {
+                  "maximumError": "20kb",
+                  "maximumWarning": "10kb",
+                  "type": "anyComponentStyle"
+                }
+              ],
+              "outputHashing": "all"
+            }
+          },
+          "defaultConfiguration": "production",
+          "options": {
+            "allowedCommonJsDependencies": [
+              "camelcase-keys"
             ],
-            "tsConfig": "apps/outposts-web/tsconfig.app.json",
-            "inlineStyleLanguage": "scss",
             "assets": [
               "apps/outposts-web/src/favicon.ico",
               "apps/outposts-web/src/assets",
@@ -38,126 +50,101 @@
                 "glob": "**/*{.js,.css}",
                 "input": "node_modules/prismjs/components",
                 "output": "/assets/prismjs/components"
+              },
+              {
+                "glob": "**/*",
+                "input": "node_modules/monaco-editor",
+                "output": "/assets/monaco/"
               }
             ],
+            "customWebpackConfig": {
+              "path": "apps/outposts-web/custom-webpack.config.ts",
+              "replaceDuplicatePlugins": true
+            },
+            "index": "apps/outposts-web/src/index.html",
+            "inlineStyleLanguage": "scss",
             "main": "apps/outposts-web/src/main.ts",
+            "outputPath": "dist/outposts-web",
+            "polyfills": [
+              "zone.js"
+            ],
+            "scripts": [
+              {
+                "bundleName": "prism",
+                "inject": true,
+                "input": "node_modules/prismjs/prism.js"
+              },
+              {
+                "bundleName": "prism",
+                "inject": true,
+                "input": "node_modules/prismjs/plugins/autoloader/prism-autoloader.min.js"
+              },
+              {
+                "bundleName": "prism",
+                "inject": true,
+                "input": "node_modules/prismjs/plugins/command-line/prism-command-line.min.js"
+              },
+              {
+                "bundleName": "prism",
+                "inject": true,
+                "input": "node_modules/prismjs/plugins/line-highlight/prism-line-highlight.min.js"
+              },
+              {
+                "bundleName": "prism",
+                "inject": true,
+                "input": "node_modules/prismjs/plugins/line-numbers/prism-line-numbers.min.js"
+              },
+              {
+                "bundleName": "cliboard",
+                "inject": true,
+                "input": "node_modules/clipboard/dist/clipboard.min.js"
+              },
+              {
+                "bundleName": "mermaid",
+                "inject": false,
+                "input": "node_modules/mermaid/dist/mermaid.min.js"
+              },
+              {
+                "bundleName": "katex",
+                "inject": false,
+                "input": "node_modules/katex/dist/katex.min.js"
+              },
+              {
+                "bundleName": "katex",
+                "inject": false,
+                "input": "node_modules/katex/dist/contrib/auto-render.min.js"
+              }
+            ],
             "styles": [
               "apps/outposts-web/src/styles.scss",
               {
-                "input": "node_modules/prism-themes/themes/prism-atom-dark.min.css",
+                "bundleName": "prism",
                 "inject": true,
-                "bundleName": "prism"
+                "input": "node_modules/prism-themes/themes/prism-atom-dark.min.css"
               },
               {
-                "input": "node_modules/prismjs/plugins/command-line/prism-command-line.min.css",
+                "bundleName": "prism",
                 "inject": true,
-                "bundleName": "prism"
+                "input": "node_modules/prismjs/plugins/command-line/prism-command-line.min.css"
               },
               {
-                "input": "node_modules/prismjs/plugins/line-highlight/prism-line-highlight.min.css",
+                "bundleName": "prism",
                 "inject": true,
-                "bundleName": "prism"
+                "input": "node_modules/prismjs/plugins/line-highlight/prism-line-highlight.min.css"
               },
               {
-                "input": "node_modules/prismjs/plugins/line-numbers/prism-line-numbers.min.css",
+                "bundleName": "prism",
                 "inject": true,
-                "bundleName": "prism"
+                "input": "node_modules/prismjs/plugins/line-numbers/prism-line-numbers.min.css"
               },
               {
-                "input": "node_modules/katex/dist/katex.min.css",
+                "bundleName": "katex",
                 "inject": false,
-                "bundleName": "katex"
+                "input": "node_modules/katex/dist/katex.min.css"
               }
             ],
-            "scripts": [
-              "node_modules/clipboard/dist/clipboard.min.js",
-              {
-                "input": "node_modules/prismjs/prism.js",
-                "inject": true,
-                "bundleName": "prism"
-              },
-              {
-                "input": "node_modules/prismjs/plugins/autoloader/prism-autoloader.min.js",
-                "inject": true,
-                "bundleName": "prism"
-              },
-              {
-                "input": "node_modules/prismjs/plugins/command-line/prism-command-line.min.js",
-                "inject": true,
-                "bundleName": "prism"
-              },
-              {
-                "input": "node_modules/prismjs/plugins/line-highlight/prism-line-highlight.min.js",
-                "inject": true,
-                "bundleName": "prism"
-              },
-              {
-                "input": "node_modules/prismjs/plugins/line-numbers/prism-line-numbers.min.js",
-                "inject": true,
-                "bundleName": "prism"
-              },
-              {
-                "input": "node_modules/mermaid/dist/mermaid.min.js",
-                "inject": false,
-                "bundleName": "mermaid"
-              },
-              {
-                "input": "node_modules/katex/dist/katex.min.js",
-                "inject": false,
-                "bundleName": "katex"
-              },
-              {
-                "input": "node_modules/katex/dist/contrib/auto-render.min.js",
-                "inject": false,
-                "bundleName": "katex"
-              }
-            ],
-            "allowedCommonJsDependencies": [
-              "camelcase-keys"
-            ]
-          },
-          "configurations": {
-            "production": {
-              "budgets": [
-                {
-                  "type": "initial",
-                  "maximumWarning": "500kb",
-                  "maximumError": "1mb"
-                },
-                {
-                  "type": "anyComponentStyle",
-                  "maximumWarning": "2kb",
-                  "maximumError": "4kb"
-                }
-              ],
-              "outputHashing": "all"
-            },
-            "development": {
-              "optimization": false,
-              "extractLicenses": false,
-              "sourceMap": true,
-              "fileReplacements": [
-                {
-                  "replace": "apps/outposts-web/src/environments/environment.ts",
-                  "with": "apps/outposts-web/src/environments/environment.development.ts"
-                }
-              ]
-            }
-          },
-          "defaultConfiguration": "production"
-        },
-        "serve": {
-          "builder": "@angular-builders/custom-webpack:dev-server",
-          "configurations": {
-            "production": {
-              "buildTarget": "outposts-web:build:production"
-            },
-            "development": {
-              "buildTarget": "outposts-web:build:development",
-              "disableHostCheck": true
-            }
-          },
-          "defaultConfiguration": "development"
+            "tsConfig": "apps/outposts-web/tsconfig.app.json"
+          }
         },
         "extract-i18n": {
           "builder": "@angular-builders/custom-webpack:extract-i18n",
@@ -165,26 +152,52 @@
             "buildTarget": "outposts-web:build"
           }
         },
+        "serve": {
+          "builder": "@angular-builders/custom-webpack:dev-server",
+          "configurations": {
+            "development": {
+              "buildTarget": "outposts-web:build:development",
+              "disableHostCheck": true
+            },
+            "production": {
+              "buildTarget": "outposts-web:build:production"
+            }
+          },
+          "defaultConfiguration": "development",
+          "options": {
+            "host": "0.0.0.0"
+          }
+        },
         "test": {
           "builder": "@angular-builders/custom-webpack:karma",
           "options": {
-            "polyfills": [
-              "zone.js",
-              "zone.js/testing"
-            ],
-            "tsConfig": "apps/outposts-web/tsconfig.spec.json",
-            "inlineStyleLanguage": "scss",
             "assets": [
               "apps/outposts-web/src/favicon.ico",
               "apps/outposts-web/src/assets"
             ],
+            "inlineStyleLanguage": "scss",
+            "polyfills": [
+              "zone.js",
+              "zone.js/testing"
+            ],
+            "scripts": [],
             "styles": [
               "apps/outposts-web/src/styles.scss"
             ],
-            "scripts": []
+            "tsConfig": "apps/outposts-web/tsconfig.spec.json"
           }
         }
-      }
+      },
+      "prefix": "app",
+      "projectType": "application",
+      "root": "apps/outposts-web",
+      "schematics": {
+        "@schematics/angular:component": {
+          "style": "scss"
+        }
+      },
+      "sourceRoot": "apps/outposts-web/src"
     }
-  }
+  },
+  "version": 1
 }

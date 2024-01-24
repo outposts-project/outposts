@@ -82,9 +82,11 @@ pub async fn authorize_current_user(
                 .decode_with_jwks(&jwk_set, Some(algorithm))
                 .map_err(|_| AppError::Unauthorized)?;
 
-            let mut validation_options = ValidationOptions::default();
-            validation_options.issuer = Validation::Validate(issuer.clone());
-            validation_options.audience = Validation::Validate(audience.clone());
+            let validation_options = ValidationOptions {
+              issuer: Validation::Validate(issuer.clone()),
+              audience: Validation::Validate(audience.clone()),
+              ..ValidationOptions::default()
+            };
 
             claims
                 .validate(validation_options)

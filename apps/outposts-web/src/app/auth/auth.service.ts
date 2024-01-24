@@ -1,77 +1,90 @@
-import {inject, Injectable, OnDestroy} from '@angular/core';
-import LogtoClient from '@logto/browser'
-import {environment} from "../../environments/environment";
+import { DestroyRef, inject, Injectable } from '@angular/core';
+import LogtoClient, { IdTokenClaims } from '@logto/browser';
+import { environment } from '../../environments/environment';
 import {
-  BehaviorSubject, catchError, concatMap, defer,
+  BehaviorSubject,
+  catchError,
+  concatMap,
+  defer,
   distinctUntilChanged,
   filter,
-  from, iif,
-  map, merge, mergeMap,
-  Observable, of, pairwise,
+  from,
+  iif,
+  map,
+  merge,
+  mergeMap,
+  Observable,
+  of,
+  pairwise,
   ReplaySubject,
   shareReplay,
   startWith,
-  Subject, switchMap, takeUntil, tap,
-  throwError, withLatestFrom
-} from "rxjs";
-import {AbstractNavigator, AppState, SignInOptions, SignOutOptions, UserAuthState} from "./auth.defs";
+  Subject,
+  switchMap,
+  tap,
+  throwError,
+  withLatestFrom,
+  forkJoin,
+  EMPTY,
+} from 'rxjs';
+import { AbstractNavigator, AppState, AUTH_RESOURCES, AUTH_SCOPES, SignInOptions, SignOutOptions, UserAuthState } from './auth.defs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { WINDOW } from '@app/core/providers/window';
+import { DOCUMENT, Location } from '@angular/common';
+import { ActivatedRouteSnapshot, Router, RouterStateSnapshot } from '@angular/router';
+import { AccessTokenClaims } from '@logto/js';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
-export class AuthService<TAppState extends AppState = AppState> implements OnDestroy {
+export class AuthService<TAppState extends AppState = AppState> {
   protected logtoClient: LogtoClient;
-  private readonly navigator = inject(AbstractNavigator);
+  protected readonly navigator = inject(AbstractNavigator);
+  protected readonly destoryRef = inject(DestroyRef);
+  protected readonly window = inject(WINDOW);
+  protected readonly location = inject(Location);
+  protected readonly document = inject(DOCUMENT);
 
-  constructor(
-  ) {
+  constructor() {
     this.logtoClient = new LogtoClient({
       endpoint: environment.AUTH_ENDPOINT,
       appId: environment.AUTH_APPID,
-      resources: [
-        'sub',
-        'profile',
-        'email',
-        'phone',
-        'custom_data',
-        'identities'
-      ]
-    })
+      resources: AUTH_RESOURCES,
+      scopes: AUTH_SCOPES,
+    });
     const checkSessionOrCallback$ = (isCallback: boolean) =>
       iif(
         () => isCallback,
         this.handleSignInCallback(location.href),
         defer(() => this.logtoClient.isAuthenticated())
-      )
+      );
 
     this.shouldHandleCallback()
       .pipe(
         switchMap((isCallback) =>
-          checkSessionOrCallback$(isCallback)
-            .pipe(
-              catchError((error) => {
-                /**
-                 * @TODO FIXME HERE
-                 */
-                this.navigator.navigateByUrl('/auth_callback_error');
-                this.error = error;
-                return of(undefined)
-              })
-            )
+          checkSessionOrCallback$(isCallback).pipe(
+            catchError((error) => {
+              /**
+               * @TODO FIXME HERE
+               */
+              this.navigator.navigateByUrl('/');
+              this.error = error;
+              return of(undefined);
+            })
+          )
         ),
         tap(() => {
           this.isLoading = false;
         }),
-        takeUntil(this.ngUnsubscribeSubject$)
-      ).subscribe();
+        takeUntilDestroyed(this.destoryRef)
+      )
+      .subscribe();
   }
 
   protected isLoadingSubject$ = new BehaviorSubject<boolean>(true);
   protected refreshSubject$ = new Subject<void>();
   protected accessTokenSubject$ = new ReplaySubject<string>(1);
   protected errorSubject$ = new ReplaySubject<Error>(1);
-  // https://stackoverflow.com/a/41177163
-  protected ngUnsubscribeSubject$ = new Subject<void>();
   protected appStateSubject$ = new ReplaySubject<TAppState>(1);
 
   /**
@@ -109,9 +122,7 @@ export class AuthService<TAppState extends AppState = AppState> implements OnDes
       //  - the value whenever refreshState$ emits
       merge(
         defer(() => this.logtoClient.isAuthenticated()),
-        this.accessTokenTrigger$.pipe(
-          mergeMap(() => this.logtoClient.isAuthenticated())
-        ),
+        this.accessTokenTrigger$.pipe(mergeMap(() => this.logtoClient.isAuthenticated())),
         this.refreshSubject$.pipe(mergeMap(() => this.logtoClient.isAuthenticated()))
       )
     )
@@ -121,17 +132,14 @@ export class AuthService<TAppState extends AppState = AppState> implements OnDes
    * Emits boolean values indicating the authentication state of the user. If `true`, it means a user has authenticated.
    * This depends on the value of `isLoading$`, so there is no need to manually check the loading state of the SDK.
    */
-  public readonly isAuthenticated$ = this.isAuthenticatedTrigger$.pipe(
-    distinctUntilChanged(),
-    shareReplay(1)
-  );
+  public readonly isAuthenticated$ = this.isAuthenticatedTrigger$.pipe(distinctUntilChanged(), shareReplay(1));
 
   /**
    * Emits details about the authenticated user, or null if not authenticated.
    */
   public readonly user$ = this.isAuthenticatedTrigger$.pipe(
     concatMap((authenticated) =>
-      authenticated ? this.logtoClient.fetchUserInfo() as Promise<UserAuthState> : of(null)
+      authenticated ? (this.logtoClient.fetchUserInfo() as Promise<UserAuthState>) : of(null)
     ),
     distinctUntilChanged()
   );
@@ -140,9 +148,7 @@ export class AuthService<TAppState extends AppState = AppState> implements OnDes
    * Emits ID token claims when authenticated, or null if not authenticated.
    */
   public readonly idTokenClaims$ = this.isAuthenticatedTrigger$.pipe(
-    concatMap((authenticated) =>
-      authenticated ? this.logtoClient.getIdTokenClaims() : of(null)
-    )
+    concatMap((authenticated) => (authenticated ? this.logtoClient.getIdTokenClaims() : of(null)))
   );
 
   /**
@@ -191,16 +197,9 @@ export class AuthService<TAppState extends AppState = AppState> implements OnDes
     this.errorSubject$.next(error);
   }
 
-  ngOnDestroy(): void {
-    this.ngUnsubscribeSubject$.next();
-    this.ngUnsubscribeSubject$.complete();
-  }
-
-  signIn (
-    options: SignInOptions
-  ): Observable<void> {
+  signIn(options: SignInOptions): Observable<void> {
     if (options.signInType === 'redirect') {
-      return from(this.logtoClient.signIn(options.redirectUrl))
+      return from(this.logtoClient.signIn(options.redirectUrl));
     }
     /**
      * @TODO FIXME HERE
@@ -208,11 +207,9 @@ export class AuthService<TAppState extends AppState = AppState> implements OnDes
     return throwError(() => new Error('not implemented'));
   }
 
-  signOut (
-    options: SignOutOptions
-  ): Observable<void> {
+  signOut(options: SignOutOptions): Observable<void> {
     if (options.signOutType === 'redirect') {
-      return from(this.logtoClient.signOut(options.redirectUrl))
+      return from(this.logtoClient.signOut(options.redirectUrl));
     }
     /**
      * @TODO FIXME HERE
@@ -220,12 +217,8 @@ export class AuthService<TAppState extends AppState = AppState> implements OnDes
     return throwError(() => new Error('not implemented'));
   }
 
-  handleSignInCallback (
-    callbackUrl?: string
-  ) {
-    return defer(() =>
-      this.logtoClient.handleSignInCallback(callbackUrl || window.location.href),
-    ).pipe(
+  handleSignInCallback(callbackUrl?: string) {
+    return defer(() => this.logtoClient.handleSignInCallback(callbackUrl || this.window.location.href)).pipe(
       switchMap(() => this.logtoClient.isAuthenticated()),
       withLatestFrom(this.isLoading$),
       tap(([_, isLoading]) => {
@@ -238,6 +231,69 @@ export class AuthService<TAppState extends AppState = AppState> implements OnDes
   }
 
   protected shouldHandleCallback(): Observable<boolean> {
-    return from(this.logtoClient.isSignInRedirected(location.href));
+    return from(this.logtoClient.isSignInRedirected(this.window.location.href));
+  }
+
+  getResourceToken (resource: string): Observable<string | null> {
+    return from(this.logtoClient.getAccessToken(resource)).pipe(
+      catchError(() => of(null))
+    )
+  }
+
+  getTokenClaims({
+    resources = [],
+  }: {
+    resources: string[] | undefined;
+  }): Observable<{ id: IdTokenClaims; resources: AccessTokenClaims[] } | null> {
+    return this.isAuthenticated$.pipe(
+      switchMap((isAuth) => {
+        if (!isAuth) {
+          return of(null);
+        }
+        return forkJoin([
+          from(this.logtoClient.getIdTokenClaims()),
+          ...resources.map((r) => from(this.logtoClient.getAccessTokenClaims(r))),
+        ]).pipe(
+          map(([idClaims, ...resourceClaims]) => {
+            return {
+              id: idClaims,
+              resources: resourceClaims,
+            };
+          })
+        );
+      })
+    );
+  }
+
+  canActivate({
+    scopes: expectedScopes,
+    resources,
+    redirectUrlToBase = '/',
+  }: {
+    resources: string[];
+    scopes: RegExp[];
+    redirectUrlToBase?: string;
+  }): (route: ActivatedRouteSnapshot, state: RouterStateSnapshot) => Observable<boolean> {
+    return (_route, _state) =>
+      this.isAuthenticated$.pipe(
+        switchMap((isAuth) => {
+          if (isAuth) {
+            return of(true);
+          }
+          const redirectUrl = `${this.document.baseURI.replace(/\/$/, '')}${redirectUrlToBase}`;
+          return from(this.signIn({ redirectUrl, signInType: 'redirect' })).pipe(switchMap(() => EMPTY));
+        }),
+        switchMap((_isAuth) => {
+          
+          return this.getTokenClaims({
+            resources,
+          }).pipe(
+            map((clms) => {
+              const actualScopes = (clms?.resources || []).map((c) => c.scope || '');
+              return expectedScopes.length === 0 || expectedScopes.every((s) => actualScopes.some((as) => s.test(as)));
+            })
+          );
+        })
+      );
   }
 }

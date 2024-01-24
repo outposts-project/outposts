@@ -29,7 +29,8 @@ export default (
       'process.env.AUTH_TYPE': JSON.stringify(process.env['AUTH_TYPE']),
       'process.env.AUTH_ENDPOINT': JSON.stringify(process.env['AUTH_ENDPOINT']),
       'process.env.OUTPOSTS_WEB_AUTH_APPID': JSON.stringify(process.env['OUTPOSTS_WEB_AUTH_APPID']),
-      'process.env.APP_VERSION': JSON.stringify(version)
+      'process.env.APP_VERSION': JSON.stringify(version),
+      'process.env.CONFLUENCE_API_ENDPOINT': JSON.stringify(process.env['CONFLUENCE_API_ENDPOINT'])
     })
   );
   config.plugins = plugins;
@@ -46,6 +47,13 @@ export default (
       }
     }
   });
+
+  rules.push(
+    {
+      test: /\.md$/,
+      type: 'asset/source',
+    }
+  )
 
   rules.push(
     {

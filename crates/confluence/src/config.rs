@@ -13,6 +13,7 @@ pub enum AuthConfig {
 #[derive(Clone, Debug)]
 pub struct AppConfig {
     pub port: u16,
+    pub host: String,
     pub auth: AuthConfig,
     pub database_url: String,
 }

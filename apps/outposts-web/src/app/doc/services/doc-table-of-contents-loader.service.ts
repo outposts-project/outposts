@@ -39,7 +39,7 @@ export class DocTableOfContentsLoader {
     const updatedTopValues = new Map<string, number>();
 
     for (const heading of headings) {
-      const top = Math.floor(heading.getBoundingClientRect().top + window.scrollY - this.toleranceThreshold);
+      const top = Math.floor(heading.getBoundingClientRect().top + this.window.scrollY - this.toleranceThreshold);
       updatedTopValues.set(heading.id, top);
     }
 
@@ -52,7 +52,7 @@ export class DocTableOfContentsLoader {
     if (!isPlatformBrowser(this.platformId)) {
       return 0;
     }
-    return Math.floor(heading.getBoundingClientRect().top + window.scrollY - this.toleranceThreshold)
+    return Math.floor(heading.getBoundingClientRect().top + this.window.scrollY - this.toleranceThreshold)
   }
 
   private getHeadingTitle (heading: HTMLHeadingElement): string {

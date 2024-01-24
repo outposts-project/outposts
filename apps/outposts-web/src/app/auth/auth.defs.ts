@@ -1,6 +1,10 @@
-import {inject, Injectable, Injector} from "@angular/core";
-import {Router} from "@angular/router";
-import {Location} from "@angular/common";
+import { inject, Injectable } from '@angular/core';
+import { Router } from '@angular/router';
+import { Location } from '@angular/common';
+import { environment } from '@environments/environment';
+
+export const AUTH_RESOURCES = [environment.CONFLUENCE_API_ENDPOINT];
+export const AUTH_SCOPES = ['read:confluence', 'write:confluence'];
 
 export type UserAuthIdentity = {
   userId: string;
@@ -18,10 +22,10 @@ export type UserAuthState = {
   phone_number_verified?: boolean;
   custom_data?: unknown;
   identities?: Record<string, UserAuthIdentity>;
-}
+};
 
 export interface RedirectSignInOptions {
-  signInType: 'redirect',
+  signInType: 'redirect';
   redirectUrl: string;
 }
 
@@ -29,14 +33,13 @@ export interface RedirectSignInOptions {
  * @unimplemented
  */
 export interface PopupSignInOptions {
-  signInType: 'popup'
+  signInType: 'popup';
 }
 
 export type SignInOptions = RedirectSignInOptions | PopupSignInOptions;
 
-
 export interface RedirectSignOutOptions {
-  signOutType: 'redirect',
+  signOutType: 'redirect';
   redirectUrl: string;
 }
 
@@ -44,7 +47,7 @@ export interface RedirectSignOutOptions {
  * @unimplemented
  */
 export interface PopupSignOutOptions {
-  signOutType: 'popup'
+  signOutType: 'popup';
 }
 
 export type SignOutOptions = RedirectSignOutOptions | PopupSignOutOptions;

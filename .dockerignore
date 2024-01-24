@@ -1,0 +1,14 @@
+**/.dockerignore
+**/Dockerfile
+docker-compose.yml
+docker-compose.yaml
+compose.yaml
+compose.yml
+log
+**/log
+target
+**/target
+node_modules
+**/node_modules
+postgres/data
+.vscode

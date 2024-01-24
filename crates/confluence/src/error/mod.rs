@@ -3,6 +3,7 @@ use axum::response::{IntoResponse, Response};
 use sea_orm::DbErr;
 use std::fmt::Debug;
 use thiserror::Error;
+use reqwest::Error as FetchError;
 
 #[derive(Error, Debug)]
 pub enum ConfigError {
@@ -12,6 +13,8 @@ pub enum ConfigError {
         server: String,
         source_kind: addr::error::Kind,
     },
+    #[error(transparent)]
+    Format(#[from] serde_yaml::Error),
     #[error(transparent)]
     Other(#[from] anyhow::Error),
 }
@@ -24,6 +27,8 @@ pub enum AppError {
     DbNotFound(String),
     #[error(transparent)]
     Config(#[from] ConfigError),
+    #[error(transparent)]
+    Fetch(#[from] FetchError),
     #[error("UNAUTHORIZED")]
     Unauthorized,
     #[error(transparent)]
@@ -41,6 +46,7 @@ impl IntoResponse for AppError {
             Self::Config(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
             Self::Other(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
             Self::Unauthorized => (StatusCode::UNAUTHORIZED, UNAUTHORIZED_MSG.to_string()),
+            Self::Fetch(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
         }
         .into_response()
     }

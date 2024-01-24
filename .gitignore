@@ -217,4 +217,6 @@ index.d.ts.map
 /examples/*
 !/examples/.gitkeep
 /.env
+/.env.bk
 /.angular
+/*.session.sql

@@ -19,14 +19,12 @@ pub async fn find_certain_confluence_profiles_and_subscribe_sources(
     db: &DatabaseConnection,
     id: i32,
 ) -> Result<(Vec<profile::Model>, Vec<subscribe_source::Model>), AppError> {
-    let (pms, sms) = tokio::join!(
+    tokio::try_join!(
         profile::Entity::find()
             .filter(profile::Column::ConfluenceId.eq(id))
             .all(db),
         subscribe_source::Entity::find()
             .filter(subscribe_source::Column::ConfluenceId.eq(id))
             .all(db)
-    );
-
-    Ok((pms?, sms?))
+    ).map_err(AppError::from)
 }

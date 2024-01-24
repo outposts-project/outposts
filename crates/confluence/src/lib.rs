@@ -1,4 +1,5 @@
 #![feature(slice_take)]
+#![feature(async_closure)]
 
 pub mod api;
 pub mod auth;
