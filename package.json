@@ -9,7 +9,8 @@
   "scripts": {
     "dev": "npm-run-all -p dev:proxy dev:outposts-web",
     "dev:proxy": "npm run start -w dev-proxy",
-    "dev:outposts-web": "npm run start -w outposts-web"
+    "dev:outposts-web": "npm run start -w outposts-web",
+    "build:outposts-web": "npm run build -w outposts-web"
   },
   "repository": {
     "type": "git",
