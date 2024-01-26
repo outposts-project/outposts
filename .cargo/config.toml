@@ -3,13 +3,12 @@
 [build]
 rustflags = ["-Zthreads=8"]
 
-#[target.x86_64-unknown-linux-gnu]
-#linker = "clang"
-#rustflags = [
-#    "-Zthreads=8",
-#    "-Clink-arg=-fuse-ld=lld",
-#    "-Zshare-generics=y"
-#]
+[alias]
+xtask = "run --package xtask --"
+
+[target.x86_64-unknown-linux-gnu]
+linker = "clang"
+rustflags = ["-Zthreads=8", "-Clink-arg=-fuse-ld=lld", "-Zshare-generics=y"]
 
 # NOTE: you must install [Mach-O LLD Port](https://lld.llvm.org/MachO/index.html) on mac. you can easily do this by installing llvm which includes lld with the "brew" package manager:
 # `brew install llvm`
@@ -33,7 +32,4 @@ rustflags = ["-Zthreads=8"]
 
 [target.x86_64-pc-windows-msvc]
 linker = "rust-lld.exe"
-rustflags = [
-    "-Zthreads=8",
-    "-Zshare-generics=n"
-]
+rustflags = ["-Zthreads=8", "-Zshare-generics=n"]

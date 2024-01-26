@@ -1,5 +1,5 @@
 FROM rustlang/rust:nightly-slim AS chef
-RUN apt-get update && apt-get install -y curl libssl-dev pkg-config && apt-get install -y --no-install-recommends ca-certificates
+RUN apt-get update && apt-get install -y curl libssl-dev lld pkg-config && apt-get install -y --no-install-recommends ca-certificates
 RUN curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
 RUN cargo binstall cargo-chef sccache --no-confirm 
 ENV RUSTC_WRAPPER=sccache
