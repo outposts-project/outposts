@@ -4,8 +4,8 @@ create table if not exists public.confluence (
   creator varchar not null,
   created_at timestamp default now() not null,
   updated_at timestamp default now() not null,
-  mux_content text not null
-  name varchar not null,
+  mux_content text not null,
+  name varchar not null
 );
 alter table public.confluence owner to outposts;
 create index if not exists confluence_creator_uindex on public.confluence (creator);
@@ -25,8 +25,8 @@ create table if not exists public.subscribe_source (
   created_at timestamp default now() not null,
   updated_at timestamp default now() not null,
   confluence_id integer not null constraint subscribe_source_confluence_id_fk references public.confluence,
-  name varchar(255) not null
-  content text not null,
+  name varchar(255) not null,
+  content text not null
 );
 alter table public.subscribe_source owner to outposts;
 create index if not exists subscribe_source_confluence_id_index on public.subscribe_source (confluence_id);
