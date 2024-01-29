@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/confluence"]
+members = ["crates/confluence", "crates/prisma"]
 resolver = "2"
 
 [profile.release]

@@ -1,0 +1,41 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("CONFLUENCE_DATABASE_URL")
+}
+
+generator client {
+  provider = "cargo prisma"
+  output   = "../src/prisma.rs"
+}
+
+model Confluence {
+  id                Int               @id @default(autoincrement())
+  creator           String            @db.VarChar
+  name              String            @db.VarChar
+  created_at        DateTime          @default(now())
+  updated_at        DateTime          @default(now())
+  template          String            @db.Text
+  mux_content       String            @db.Text
+  profiles          Profile[]
+  subscribe_sources SubscribeSource[]
+}
+
+model Profile {
+  id             Int        @id @default(autoincrement())
+  created_at     DateTime   @default(now())
+  updated_at     DateTime   @default(now())
+  resource_token String     @db.VarChar
+  confluence     Confluence @relation(fields: [confluenceId], references: [id])
+  confluenceId   Int
+}
+
+model SubscribeSource {
+  id           Int        @id @default(autoincrement())
+  url          String     @db.Text
+  created_at   DateTime   @default(now())
+  updated_at   DateTime   @default(now())
+  name         String     @db.Text
+  content      String     @db.Text
+  confluence   Confluence @relation(fields: [confluenceId], references: [id])
+  confluenceId Int
+}

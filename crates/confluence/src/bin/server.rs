@@ -12,7 +12,7 @@ use confluence::api::{
 };
 use confluence::auth::auth;
 use confluence::config::{AppConfig, AuthConfig};
-use sea_orm::{ConnectOptions, Database};
+use confluence::prisma::PrismaClient;
 use std::env;
 use std::net::IpAddr;
 use std::net::SocketAddr;
@@ -36,22 +36,14 @@ async fn main() {
     let db_url =
         env::var("CONFLUENCE_DATABASE_URL").expect("CONFLUENCE_DATABASE_URL is not set in env");
 
-    let mut opt = ConnectOptions::new(db_url.clone());
-    opt.max_connections(100)
-        .min_connections(5)
-        .sqlx_logging(true)
-        .sqlx_logging_level(log::LevelFilter::Debug);
-
-    let conn = Database::connect(opt)
-        .await
-        .expect("Database connection failed");
+    let client: PrismaClient = PrismaClient::_builder().build().await.expect("Database connection failed");
 
     let auth_type = env::var("AUTH_TYPE").expect("AUTH_TYPE is not set in env");
     let host = env::var("CONFLUENCE_HOST").unwrap_or_else(|_| String::from("0.0.0.0"));
     let port = env::var("CONFLUENCE_PORT").map_or(4001u16, |p| p.parse::<u16>().unwrap());
 
     let state = Arc::new(AppState::new(
-        conn,
+        client,
         AppConfig {
             port,
             host,

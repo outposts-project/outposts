@@ -1,5 +1,10 @@
-use crate::entities;
+use crate::prisma::{
+    confluence,
+    profile,
+    subscribe_source
+};
 use serde::{Deserialize, Serialize};
+use crate::error::AppError;
 use ts_rs::TS;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
@@ -24,8 +29,8 @@ pub struct SubscribeSourceDto {
     pub content: String
 }
 
-impl From<entities::subscribe_source::Model> for SubscribeSourceDto {
-    fn from(value: entities::subscribe_source::Model) -> Self {
+impl From<subscribe_source::Data> for SubscribeSourceDto {
+    fn from(value: subscribe_source::Data) -> Self {
         Self {
             id: value.id,
             url: value.url,
@@ -38,8 +43,8 @@ impl From<entities::subscribe_source::Model> for SubscribeSourceDto {
     }
 }
 
-impl From<entities::profile::Model> for ProfileDto {
-    fn from(value: entities::profile::Model) -> Self {
+impl From<profile::Data> for ProfileDto {
+    fn from(value: profile::Data) -> Self {
         Self {
             id: value.id,
             confluence_id: value.confluence_id,
@@ -66,21 +71,19 @@ pub struct ConfluenceDto {
 
 impl ConfluenceDto {
     pub fn from_orm(
-        confluence: entities::confluence::Model,
-        sms: Vec<entities::subscribe_source::Model>,
-        pms: Vec<entities::profile::Model>,
-    ) -> Self {
-        Self {
+        confluence: confluence::Data
+    ) -> Result<Self, AppError> {
+        Ok(Self {
             id: confluence.id,
             template: confluence.template,
             created_at: confluence.created_at.timestamp_millis(),
             updated_at: confluence.updated_at.timestamp_millis(),
             creator: confluence.creator,
             mux_content: confluence.mux_content,
-            subscribe_sources: sms.into_iter().map(|s| s.into()).collect(),
-            profiles: pms.into_iter().map(|s| s.into()).collect(),
+            subscribe_sources: confluence.subscribe_sources.ok_or(AppError::Unreachable)?.into_iter().map(|ss| ss.into()).collect(),
+            profiles: confluence.profiles.ok_or(AppError::Unreachable)?.into_iter().map(|p| p.into()).collect(),
             name: confluence.name
-        }
+        })
     }
 }
 

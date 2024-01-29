@@ -215,3 +215,4 @@ index.d.ts.map
 
 /target
 /bindings
+/src/prisma.rs

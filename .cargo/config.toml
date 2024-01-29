@@ -4,7 +4,8 @@
 rustflags = ["-Zthreads=8"]
 
 [alias]
-xtask = "run --package xtask --"
+prisma = "run -p prisma --"
+
 
 [target.x86_64-unknown-linux-gnu]
 linker = "clang"
