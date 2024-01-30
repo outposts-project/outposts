@@ -27,17 +27,14 @@ export class ConfluenceService {
       {},
       {
         responseType: 'json',
-      }
+      },
     );
   }
 
-  removeConfluence (id: number) {
-    return this.httpClient.delete(
-      `${environment.CONFLUENCE_API_ENDPOINT}/confluence/${id}`,
-      {
-        responseType: 'json',
-      }
-    );
+  removeConfluence(id: number) {
+    return this.httpClient.delete(`${environment.CONFLUENCE_API_ENDPOINT}/confluence/${id}`, {
+      responseType: 'json',
+    });
   }
 
   getConfluenceById(id: number) {
@@ -70,45 +67,41 @@ export class ConfluenceService {
       form,
       {
         responseType: 'json',
-      }
+      },
     );
   }
 
-  syncConfluence (id: number) {
+  syncConfluence(id: number) {
     return this.httpClient.post<ConfluenceDto>(
       `${environment.CONFLUENCE_API_ENDPOINT}/confluence/sync/${id}`,
       {},
       {
-        responseType: 'json'
-      }
+        responseType: 'json',
+      },
     );
   }
 
-  muxConfluence (id: number) {
+  muxConfluence(id: number) {
     return this.httpClient.post<ConfluenceDto>(
       `${environment.CONFLUENCE_API_ENDPOINT}/confluence/mux/${id}`,
       {},
       {
-        responseType: 'json'
-      }
+        responseType: 'json',
+      },
     );
   }
 
-  addProfile (form: ProfileCreationDto) {
-    return this.httpClient.post<ProfileDto>(
-      `${environment.CONFLUENCE_API_ENDPOINT}/profile`, form, {
-        responseType: 'json'
-      }
-    )
+  addProfile(form: ProfileCreationDto) {
+    return this.httpClient.post<ProfileDto>(`${environment.CONFLUENCE_API_ENDPOINT}/profile`, form, {
+      responseType: 'json',
+    });
   }
 
-  removeProfile (id: number) {
-    return this.httpClient.delete(
-      `${environment.CONFLUENCE_API_ENDPOINT}/profile/${id}`, { responseType: 'json' }
-    )
+  removeProfile(id: number) {
+    return this.httpClient.delete(`${environment.CONFLUENCE_API_ENDPOINT}/profile/${id}`, { responseType: 'json' });
   }
 
-  getProfileUrl (resourceToken: string) {
-    return `${environment.CONFLUENCE_API_ENDPOINT}/profile_token/${resourceToken}`
+  getProfileUrl(resourceToken: string) {
+    return `${environment.CONFLUENCE_API_ENDPOINT}/profile_token/${resourceToken}`;
   }
 }

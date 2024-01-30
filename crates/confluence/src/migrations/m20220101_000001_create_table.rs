@@ -1,0 +1,139 @@
+use super::defs::{Confluence, Profile, SubscribeSource};
+use sea_orm_migration::prelude::*;
+
+#[derive(DeriveMigrationName)]
+pub struct Migration;
+
+#[async_trait::async_trait]
+impl MigrationTrait for Migration {
+    async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
+        manager
+            .create_table(
+                Table::create()
+                    .table(Confluence::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(Confluence::Id)
+                            .integer()
+                            .not_null()
+                            .auto_increment()
+                            .primary_key(),
+                    )
+                    .col(ColumnDef::new(Confluence::Template).text().not_null())
+                    .col(ColumnDef::new(Confluence::Creator).string().not_null())
+                    .col(
+                        ColumnDef::new(Confluence::CreatedAt)
+                            .timestamp()
+                            .not_null()
+                            .default(Expr::current_timestamp()),
+                    )
+                    .col(
+                        ColumnDef::new(Confluence::UpdatedAt)
+                            .timestamp()
+                            .not_null()
+                            .default(Expr::current_timestamp()),
+                    )
+                    .col(ColumnDef::new(Confluence::MuxContent).text().not_null())
+                    .col(ColumnDef::new(Confluence::Name).string().not_null())
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .create_table(
+                Table::create()
+                    .table(SubscribeSource::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(SubscribeSource::Id)
+                            .integer()
+                            .not_null()
+                            .auto_increment()
+                            .primary_key(),
+                    )
+                    .col(ColumnDef::new(SubscribeSource::Url).text().not_null())
+                    .col(
+                        ColumnDef::new(SubscribeSource::CreatedAt)
+                            .timestamp()
+                            .not_null()
+                            .default(Expr::current_timestamp()),
+                    )
+                    .col(
+                        ColumnDef::new(SubscribeSource::UpdatedAt)
+                            .timestamp()
+                            .not_null()
+                            .default(Expr::current_timestamp()),
+                    )
+                    .col(
+                        ColumnDef::new(SubscribeSource::ConfluenceId)
+                            .integer()
+                            .not_null(),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("subscribe_source_confluence_id_fk")
+                            .from(SubscribeSource::Table, SubscribeSource::ConfluenceId)
+                            .to(Confluence::Table, Confluence::Id),
+                    )
+                    .col(ColumnDef::new(SubscribeSource::Name).string().not_null())
+                    .col(ColumnDef::new(SubscribeSource::Content).text().not_null())
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .create_table(
+                Table::create()
+                    .table(Profile::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(Profile::Id)
+                            .integer()
+                            .not_null()
+                            .auto_increment()
+                            .primary_key(),
+                    )
+                    .col(ColumnDef::new(Profile::ConfluenceId).integer().not_null())
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("profile_confluence_id_fk")
+                            .from(Profile::Table, Profile::ConfluenceId)
+                            .to(Confluence::Table, Confluence::Id),
+                    )
+                    .col(
+                        ColumnDef::new(Profile::CreatedAt)
+                            .timestamp()
+                            .not_null()
+                            .default(Expr::current_timestamp()),
+                    )
+                    .col(
+                        ColumnDef::new(Profile::UpdatedAt)
+                            .timestamp()
+                            .not_null()
+                            .default(Expr::current_timestamp()),
+                    )
+                    .col(ColumnDef::new(Profile::ResourceToken).string().not_null())
+                    .index(
+                        Index::create()
+                            .if_not_exists()
+                            .name("profile_resource_token_index")
+                            .col(Profile::ResourceToken)
+                            .unique(),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+        Ok(())
+    }
+
+    async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
+        manager
+            .drop_table(Table::drop().table(Profile::Table).to_owned())
+            .await?;
+        manager
+            .drop_table(Table::drop().table(SubscribeSource::Table).to_owned())
+            .await?;
+        manager
+            .drop_table(Table::drop().table(Confluence::Table).to_owned())
+            .await?;
+        Ok(())
+    }
+}

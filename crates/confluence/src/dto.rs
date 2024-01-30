@@ -7,7 +7,9 @@ use ts_rs::TS;
 pub struct ProfileDto {
     pub id: i32,
     pub confluence_id: i32,
+    #[ts(type = "number")]
     pub created_at: i64,
+    #[ts(type = "number")]
     pub updated_at: i64,
     pub resource_token: String,
 }
@@ -17,11 +19,21 @@ pub struct ProfileDto {
 pub struct SubscribeSourceDto {
     pub id: i32,
     pub url: String,
+    #[ts(type = "number")]
     pub created_at: i64,
+    #[ts(type = "number")]
     pub updated_at: i64,
     pub confluence_id: i32,
     pub name: String,
-    pub content: String
+    pub content: String,
+    #[ts(type = "number", optional)]
+    pub sub_upload: Option<i64>,
+    #[ts(type = "number", optional)]
+    pub sub_download: Option<i64>,
+    #[ts(type = "number", optional)]
+    pub sub_total: Option<i64>,
+    #[ts(type = "number", optional)]
+    pub sub_expire: Option<i64>,
 }
 
 impl From<entities::subscribe_source::Model> for SubscribeSourceDto {
@@ -33,7 +45,11 @@ impl From<entities::subscribe_source::Model> for SubscribeSourceDto {
             created_at: value.created_at.timestamp_millis(),
             updated_at: value.updated_at.timestamp_millis(),
             name: value.name,
-            content: value.content
+            content: value.content,
+            sub_download: value.sub_download,
+            sub_expire: value.sub_expire.map(|s| s.timestamp_millis()),
+            sub_total: value.sub_total,
+            sub_upload: value.sub_upload,
         }
     }
 }
@@ -56,12 +72,22 @@ pub struct ConfluenceDto {
     pub id: i32,
     pub template: String,
     pub creator: String,
+    #[ts(type = "number")]
     pub created_at: i64,
+    #[ts(type = "number")]
     pub updated_at: i64,
     pub mux_content: String,
     pub subscribe_sources: Vec<SubscribeSourceDto>,
     pub profiles: Vec<ProfileDto>,
-    pub name: String
+    pub name: String,
+    #[ts(type = "number", optional)]
+    pub sub_upload: Option<i64>,
+    #[ts(type = "number", optional)]
+    pub sub_download: Option<i64>,
+    #[ts(type = "number", optional)]
+    pub sub_total: Option<i64>,
+    #[ts(type = "number", optional)]
+    pub sub_expire: Option<i64>,
 }
 
 impl ConfluenceDto {
@@ -79,7 +105,11 @@ impl ConfluenceDto {
             mux_content: confluence.mux_content,
             subscribe_sources: sms.into_iter().map(|s| s.into()).collect(),
             profiles: pms.into_iter().map(|s| s.into()).collect(),
-            name: confluence.name
+            name: confluence.name,
+            sub_download: confluence.sub_download,
+            sub_expire: confluence.sub_expire.map(|s| s.timestamp_millis()),
+            sub_total: confluence.sub_total,
+            sub_upload: confluence.sub_upload,
         }
     }
 }
@@ -103,7 +133,7 @@ pub struct SubscribeSourceCreationDto {
 pub struct SubscribeSourceUpdateDto {
     pub url: Option<String>,
     pub name: Option<String>,
-    pub content: Option<String>
+    pub content: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]

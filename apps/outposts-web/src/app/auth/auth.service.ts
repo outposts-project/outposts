@@ -27,11 +27,19 @@ import {
   forkJoin,
   EMPTY,
 } from 'rxjs';
-import { AbstractNavigator, AppState, AUTH_RESOURCES, AUTH_SCOPES, SignInOptions, SignOutOptions, UserAuthState } from './auth.defs';
+import {
+  AbstractNavigator,
+  AppState,
+  AUTH_RESOURCES,
+  AUTH_SCOPES,
+  SignInOptions,
+  SignOutOptions,
+  UserAuthState,
+} from './auth.defs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { WINDOW } from '@app/core/providers/window';
 import { DOCUMENT, Location } from '@angular/common';
-import { ActivatedRouteSnapshot, Router, RouterStateSnapshot } from '@angular/router';
+import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { AccessTokenClaims } from '@logto/js';
 
 @Injectable({
@@ -52,11 +60,12 @@ export class AuthService<TAppState extends AppState = AppState> {
       resources: AUTH_RESOURCES,
       scopes: AUTH_SCOPES,
     });
+
     const checkSessionOrCallback$ = (isCallback: boolean) =>
       iif(
         () => isCallback,
         this.handleSignInCallback(location.href),
-        defer(() => this.logtoClient.isAuthenticated())
+        defer(() => this.logtoClient.isAuthenticated()),
       );
 
     this.shouldHandleCallback()
@@ -70,13 +79,13 @@ export class AuthService<TAppState extends AppState = AppState> {
               this.navigator.navigateByUrl('/');
               this.error = error;
               return of(undefined);
-            })
-          )
+            }),
+          ),
         ),
         tap(() => {
           this.isLoading = false;
         }),
-        takeUntilDestroyed(this.destoryRef)
+        takeUntilDestroyed(this.destoryRef),
       )
       .subscribe();
   }
@@ -103,7 +112,7 @@ export class AuthService<TAppState extends AppState = AppState> {
     map(([prev, curr]) => ({
       current: curr as string,
       previous: prev as string | null,
-    }))
+    })),
   );
 
   /**
@@ -123,9 +132,9 @@ export class AuthService<TAppState extends AppState = AppState> {
       merge(
         defer(() => this.logtoClient.isAuthenticated()),
         this.accessTokenTrigger$.pipe(mergeMap(() => this.logtoClient.isAuthenticated())),
-        this.refreshSubject$.pipe(mergeMap(() => this.logtoClient.isAuthenticated()))
-      )
-    )
+        this.refreshSubject$.pipe(mergeMap(() => this.logtoClient.isAuthenticated())),
+      ),
+    ),
   );
 
   /**
@@ -139,16 +148,16 @@ export class AuthService<TAppState extends AppState = AppState> {
    */
   public readonly user$ = this.isAuthenticatedTrigger$.pipe(
     concatMap((authenticated) =>
-      authenticated ? (this.logtoClient.fetchUserInfo() as Promise<UserAuthState>) : of(null)
+      authenticated ? (this.logtoClient.fetchUserInfo() as Promise<UserAuthState>) : of(null),
     ),
-    distinctUntilChanged()
+    distinctUntilChanged(),
   );
 
   /**
    * Emits ID token claims when authenticated, or null if not authenticated.
    */
   public readonly idTokenClaims$ = this.isAuthenticatedTrigger$.pipe(
-    concatMap((authenticated) => (authenticated ? this.logtoClient.getIdTokenClaims() : of(null)))
+    concatMap((authenticated) => (authenticated ? this.logtoClient.getIdTokenClaims() : of(null))),
   );
 
   /**
@@ -226,7 +235,7 @@ export class AuthService<TAppState extends AppState = AppState> {
           this.refresh();
         }
       }),
-      map(([result]) => result)
+      map(([result]) => result),
     );
   }
 
@@ -234,10 +243,8 @@ export class AuthService<TAppState extends AppState = AppState> {
     return from(this.logtoClient.isSignInRedirected(this.window.location.href));
   }
 
-  getResourceToken (resource: string): Observable<string | null> {
-    return from(this.logtoClient.getAccessToken(resource)).pipe(
-      catchError(() => of(null))
-    )
+  getResourceToken(resource: string): Observable<string | null> {
+    return from(this.logtoClient.getAccessToken(resource)).pipe(catchError(() => of(null)));
   }
 
   getTokenClaims({
@@ -259,9 +266,9 @@ export class AuthService<TAppState extends AppState = AppState> {
               id: idClaims,
               resources: resourceClaims,
             };
-          })
+          }),
         );
-      })
+      }),
     );
   }
 
@@ -284,16 +291,15 @@ export class AuthService<TAppState extends AppState = AppState> {
           return from(this.signIn({ redirectUrl, signInType: 'redirect' })).pipe(switchMap(() => EMPTY));
         }),
         switchMap((_isAuth) => {
-          
           return this.getTokenClaims({
             resources,
           }).pipe(
             map((clms) => {
               const actualScopes = (clms?.resources || []).map((c) => c.scope || '');
               return expectedScopes.length === 0 || expectedScopes.every((s) => actualScopes.some((as) => s.test(as)));
-            })
+            }),
           );
-        })
+        }),
       );
   }
 }

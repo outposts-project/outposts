@@ -41,7 +41,8 @@
           "defaultConfiguration": "production",
           "options": {
             "allowedCommonJsDependencies": [
-              "camelcase-keys"
+              "camelcase-keys",
+              "qrcode"
             ],
             "assets": [
               "apps/outposts-web/src/favicon.ico",

@@ -1,27 +1,26 @@
-import {NgModule} from '@angular/core';
-import {RouterModule, Routes} from '@angular/router';
-import {DashboardComponent} from "./dashboard/dashboard.component";
+import { NgModule } from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
+import { DashboardComponent } from './dashboard/dashboard.component';
 import { WorkspaceComponent } from './workspace/workspace.component';
 
 const routes: Routes = [
   {
     path: 'dashboard',
-    component: DashboardComponent
+    component: DashboardComponent,
   },
   {
     path: 'workspace/:id',
-    component: WorkspaceComponent
+    component: WorkspaceComponent,
   },
   {
     path: '',
     redirectTo: '/confluence/dashboard',
-    pathMatch: 'full'
-  }
+    pathMatch: 'full',
+  },
 ];
 
 @NgModule({
   imports: [RouterModule.forChild(routes)],
-  exports: []
+  exports: [],
 })
-export class ConfluenceRoutingModule {
-}
+export class ConfluenceRoutingModule {}

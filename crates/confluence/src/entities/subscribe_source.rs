@@ -10,13 +10,17 @@ pub struct Model {
     pub id: i32,
     #[sea_orm(column_type = "Text")]
     pub url: String,
-    #[sea_orm(auto_create_time)]
+    #[sea_orm(column_type = "Timestamp")]
     pub created_at: DateTime,
-    #[sea_orm(auto_update_time)]
+    #[sea_orm(column_type = "Timestamp")]
     pub updated_at: DateTime,
     pub confluence_id: i32,
     pub name: String,
-    pub content: String
+    pub content: String,
+    pub sub_upload: Option<i64>,
+    pub sub_download: Option<i64>,
+    pub sub_total: Option<i64>,
+    pub sub_expire: Option<DateTime>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

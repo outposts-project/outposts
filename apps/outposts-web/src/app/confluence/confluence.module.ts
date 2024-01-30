@@ -43,7 +43,7 @@ import { QrcodeModule } from '@app/qrcode/qrcode.module';
     InputTextModule,
     ToastModule,
     ClipboardModule,
-    QrcodeModule
+    QrcodeModule,
   ],
 })
 export class ConfluenceModule {}

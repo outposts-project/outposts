@@ -13,6 +13,11 @@ path = "src/bin/server.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
+uuid = { version = "1.5.0", features = [
+    "v4",                # Lets you generate random UUIDs
+    "fast-rng",          # Use a faster (but still sufficiently random) RNG
+    "macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
+] }
 addr = "0.15.6"
 anyhow = "1.0.75"
 axum = "0.7.2"
@@ -29,7 +34,11 @@ reqwest = { version = "0.11.22", features = ["json"] }
 sea-orm = { version = "0.12.4", features = [
     "debug-print",
     "runtime-tokio-native-tls",
-    "sqlx-postgres"
+    "sqlx-postgres",
+] }
+sea-orm-migration = { version = "0.12.4", features = [
+    "runtime-tokio-native-tls",
+    "sqlx-postgres",
 ] }
 serde = { version = "1.0.192", features = ["derive"] }
 serde-enum-str = "0.4.0"
@@ -42,8 +51,3 @@ tower-http = { version = "0.5.0", features = ["fs", "trace", "cors"] }
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.17", features = ["env-filter"] }
 ts-rs = "7.1.0"
-uuid = { version = "1.5.0", features = [
-    "v4", # Lets you generate random UUIDs
-    "fast-rng", # Use a faster (but still sufficiently random) RNG
-    "macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
-] }

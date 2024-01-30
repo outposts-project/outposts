@@ -11,12 +11,16 @@ pub struct Model {
     #[sea_orm(column_type = "Text")]
     pub template: String,
     pub creator: String,
-    #[sea_orm(auto_create_time)]
+    #[sea_orm(column_type = "Timestamp")]
     pub created_at: DateTime,
-    #[sea_orm(auto_update_time)]
+    #[sea_orm(column_type = "Timestamp")]
     pub updated_at: DateTime,
     #[sea_orm(column_type = "Text")]
     pub mux_content: String,
+    pub sub_upload: Option<i64>,
+    pub sub_download: Option<i64>,
+    pub sub_total: Option<i64>,
+    pub sub_expire: Option<DateTime>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

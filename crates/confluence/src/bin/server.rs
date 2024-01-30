@@ -4,7 +4,7 @@ use axum::{
     handler::HandlerWithoutStateExt, http::Method, http::StatusCode, middleware, routing::delete,
     routing::get, routing::post, routing::put, Router,
 };
-use confluence::api::{
+use confluence::services::{
     create_one_confluence, create_one_profile, create_one_subscribe_source, delete_one_confluence,
     delete_one_profile, delete_one_subscribe_source, find_many_confluences, find_one_confluence,
     find_one_profile_as_subscription_by_token, mux_one_confluence, sync_one_confluence,
@@ -12,21 +12,25 @@ use confluence::api::{
 };
 use confluence::auth::auth;
 use confluence::config::{AppConfig, AuthConfig};
+use confluence::error::AppError;
+use confluence::migrations;
 use sea_orm::{ConnectOptions, Database};
+use sea_orm_migration::MigratorTrait;
 use std::env;
 use std::net::IpAddr;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
+use tracing_subscriber::EnvFilter;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), AppError> {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "confluence=info,tower_http=info".into()),
+                .unwrap_or_else(|_| EnvFilter::new("info")),
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
@@ -37,7 +41,8 @@ async fn main() {
         env::var("CONFLUENCE_DATABASE_URL").expect("CONFLUENCE_DATABASE_URL is not set in env");
 
     let mut opt = ConnectOptions::new(db_url.clone());
-    opt.max_connections(100)
+    opt.set_schema_search_path("public")
+        .max_connections(100)
         .min_connections(5)
         .sqlx_logging(true)
         .sqlx_logging_level(log::LevelFilter::Debug);
@@ -50,6 +55,10 @@ async fn main() {
     let host = env::var("CONFLUENCE_HOST").unwrap_or_else(|_| String::from("0.0.0.0"));
     let port = env::var("CONFLUENCE_PORT").map_or(4001u16, |p| p.parse::<u16>().unwrap());
 
+    {
+        migrations::Migrator::up(&conn, None).await?;
+    }
+
     let state = Arc::new(AppState::new(
         conn,
         AppConfig {
@@ -58,8 +67,8 @@ async fn main() {
             database_url: db_url,
             auth: match &auth_type as &str {
                 "DEV_NO_AUTH" => {
-                    let user_id = env::var("CONFLUENCE_USER_ID")
-                        .expect("CONFLUENCE_USER_ID is not set in env");
+                    let user_id =
+                        env::var("AUTH_DEV_USER_ID").expect("AUTH_DEV_USER_ID is not set in env");
                     AuthConfig::DevNoAuth { user_id }
                 }
                 "JWT" => {
@@ -82,6 +91,7 @@ async fn main() {
     ));
 
     tokio::join!(serve(handle_confluence(state.clone()), state));
+    Ok(())
 }
 
 async fn handle_404() -> (StatusCode, &'static str) {

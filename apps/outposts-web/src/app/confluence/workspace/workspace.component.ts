@@ -13,18 +13,24 @@ import {
   shareReplay,
   tap,
 } from 'rxjs';
-import { ConfluenceDto } from '../bindings/ConfluenceDto';
 import { ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import type { editor } from 'monaco-editor';
-import { SubscribeSourceDto } from '../bindings/SubscribeSourceDto';
+import type { ConfluenceDto } from '../bindings/ConfluenceDto';
+import type { SubscribeSourceDto } from '../bindings/SubscribeSourceDto';
+import type { ProfileDto } from '../bindings/ProfileDto';
+import type { SubscribeSourceUpdateDto } from '../bindings/SubscribeSourceUpdateDto';
 import { isEqual } from 'lodash-es';
 import { MessageService } from 'primeng/api';
-import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+import {
+  FormBuilder,
+  FormControl,
+  FormGroup,
+  Validators,
+} from '@angular/forms';
 import { RxwebValidators } from '@rxweb/reactive-form-validators';
 import type { RecursiveNonNullable } from '@app/core/utils/type-assert';
 import { format } from 'date-fns';
-import { ProfileDto } from '../bindings/ProfileDto';
 import { ClipboardService } from '@app/clipboard/clipboard.service';
 import { QrcodeService } from '@app/qrcode/qrcode.service';
 
@@ -39,7 +45,12 @@ import { QrcodeService } from '@app/qrcode/qrcode.service';
         >
           <div class="text-xl">Template</div>
           <div class="flex gap-2">
-            <p-button label="Save" icon="pi pi-check" (click)="saveTmpl()" [outlined]="true"></p-button>
+            <p-button
+              label="Save"
+              icon="pi pi-check"
+              (click)="saveTmpl()"
+              [outlined]="true"
+            ></p-button>
             <p-button
               label="Reset"
               icon="pi pi-times"
@@ -56,39 +67,68 @@ import { QrcodeService } from '@app/qrcode/qrcode.service';
             style="min-height: 200px; height: 50vh;"
           ></ngx-monaco-editor>
         </div>
-        <p-dataView #dv [value]="subscribeSources" styleClass="mt-4" [emptyMessage]="' '">
+        <p-dataView
+          #dv
+          [value]="subscribeSources"
+          styleClass="mt-4"
+          [emptyMessage]="' '"
+        >
           <ng-template pTemplate="header">
             <div class="flex justify-content-between align-items-center">
               <div class="text-xl">Subscribe Sources</div>
               <div class="flex gap-2">
-                <p-button label="Sync" icon="pi pi-sync" (click)="syncConfluence()" [outlined]="true"></p-button>
+                <p-button
+                  label="Sync"
+                  icon="pi pi-sync"
+                  (click)="syncConfluence()"
+                  [outlined]="true"
+                ></p-button>
               </div>
             </div>
           </ng-template>
           <ng-template pTemplate="list">
-            <div class="flex flex-wrap mt-4 gap-4 align-items-stretch text-center">
+            <div
+              class="flex flex-wrap mt-4 gap-4 align-items-stretch text-center"
+            >
               <p-card
                 class="cursor-pointer confluence-subscribe-source-item h-full"
                 (click)="openCreateSubscribeSourceDialog()"
               >
                 <div>Import</div>
-                <div class="flex align-items-center justify-content-center gap-1 mt-2">
+                <div
+                  class="flex align-items-center justify-content-center gap-1 mt-2"
+                >
                   <i class="pi pi-plus p-1"></i>
                 </div>
               </p-card>
               @for (item of subscribeSources; track item.id) {
               <div class="flex flex-column align-items-center">
-                <p-card class="confluence-subscribe-source-item h-full text-center relative">
+                <p-card
+                  class="confluence-subscribe-source-item h-full text-center relative"
+                >
                   <div>{{ item.name }}</div>
-                  <div class="flex align-items-center justify-content-center gap-1 mt-2">
-                    <i class="pi pi-eye p-1 cursor-pointer" (click)="openPreviewSubscribeSourceContentDialog(item)"></i>
-                    <i class="pi pi-file-edit p-1 cursor-pointer" (click)="openUpdateSubscribeSourceDialog(item)"></i>
-                    <i class="pi pi-times p-1 cursor-pointer" (click)="removeSubscribeSource(item.id)"></i>
+                  <div
+                    class="flex align-items-center justify-content-center gap-1 mt-2"
+                  >
+                    <i
+                      class="pi pi-eye p-1 cursor-pointer"
+                      (click)="openPreviewSubscribeSourceContentDialog(item)"
+                    ></i>
+                    <i
+                      class="pi pi-file-edit p-1 cursor-pointer"
+                      (click)="openUpdateSubscribeSourceDialog(item)"
+                    ></i>
+                    <i
+                      class="pi pi-times p-1 cursor-pointer"
+                      (click)="removeSubscribeSource(item.id)"
+                    ></i>
                   </div>
                   <div
                     class="absolute border-circle"
                     [style]="{
-                      background: item.content ? 'var(--green-400)' : 'var(--gray-400)',
+                      background: item.content
+                        ? 'var(--green-400)'
+                        : 'var(--gray-400)',
                       height: '0.5em',
                       width: '0.5em',
                       right: '0.5em',
@@ -96,21 +136,34 @@ import { QrcodeService } from '@app/qrcode/qrcode.service';
                     }"
                   ></div>
                 </p-card>
-                <time class="mt-2"
-                  >Updated at:<br />
-                  {{ formatTime(item.updated_at, 'MM-dd HH:mm') }}</time
-                >
+                <time class="mt-2">
+                  Updated at:
+                  <br />
+                  {{ formatTime(item.updated_at, 'MM-dd HH:mm') }}
+                </time>
               </div>
               }
             </div>
           </ng-template>
         </p-dataView>
-        <p-dataView #dv [value]="subscribeSources" styleClass="mt-4" [emptyMessage]="' '">
+        <p-dataView
+          #dv
+          [value]="subscribeSources"
+          styleClass="mt-4"
+          [emptyMessage]="' '"
+        >
           <ng-template pTemplate="header">
             <div class="flex justify-content-between align-items-center">
               <div class="text-xl">Profiles</div>
-              <div class="flex align-items-center justify-content-center gap-1 mt-2">
-                <p-button label="Mux" icon="pi pi-sliders-v" (click)="muxConfluence()" [outlined]="true"></p-button>
+              <div
+                class="flex align-items-center justify-content-center gap-1 mt-2"
+              >
+                <p-button
+                  label="Mux"
+                  icon="pi pi-sliders-v"
+                  (click)="muxConfluence()"
+                  [outlined]="true"
+                ></p-button>
                 <p-button
                   label="Preview"
                   icon="pi pi-eye"
@@ -121,19 +174,44 @@ import { QrcodeService } from '@app/qrcode/qrcode.service';
             </div>
           </ng-template>
           <ng-template pTemplate="list">
-            <div class="flex flex-wrap mt-4 gap-4 align-items-stretch text-center">
-              <p-card class="cursor-pointer confluence-profile-item h-full" (click)="createProfile()">
-                <div>New<br/>Profile</div>
-                <div class="flex align-items-center justify-content-center gap-1 mt-2">
+            <div
+              class="flex flex-wrap mt-4 gap-4 align-items-stretch text-center"
+            >
+              <p-card
+                class="cursor-pointer confluence-profile-item h-full"
+                (click)="createProfile()"
+              >
+                <div>
+                  New
+                  <br />
+                  Profile
+                </div>
+                <div
+                  class="flex align-items-center justify-content-center gap-1 mt-2"
+                >
                   <i class="pi pi-plus p-1"></i>
                 </div>
               </p-card>
               @for (item of profiles; track item.id) {
-              <p-card class="confluence-profile-item h-full text-center relative">
-                <time style="word-wrap: pre-wrap;">{{ formatTime(item.updated_at, 'MM-dd') }}<br />{{formatTime(item.updated_at, 'HH:mm')}}</time>
-                <div class="flex align-items-center justify-content-center gap-1 mt-2">
-                  <i class="pi pi-copy p-1 cursor-pointer" (click)="copyProfileUrl(item)"></i>
-                  <i class="pi pi-times p-1 cursor-pointer" (click)="removeProfile(item.id)"></i>
+              <p-card
+                class="confluence-profile-item h-full text-center relative"
+              >
+                <time style="word-wrap: pre-wrap;">
+                  {{ formatTime(item.updated_at, 'MM-dd') }}
+                  <br />
+                  {{ formatTime(item.updated_at, 'HH:mm') }}
+                </time>
+                <div
+                  class="flex align-items-center justify-content-center gap-1 mt-2"
+                >
+                  <i
+                    class="pi pi-copy p-1 cursor-pointer"
+                    (click)="copyProfileUrl(item)"
+                  ></i>
+                  <i
+                    class="pi pi-times p-1 cursor-pointer"
+                    (click)="removeProfile(item.id)"
+                  ></i>
                 </div>
               </p-card>
               }
@@ -154,17 +232,26 @@ import { QrcodeService } from '@app/qrcode/qrcode.service';
       [resizable]="false"
       [baseZIndex]="100"
     >
-      <form [formGroup]="subscribeSourceCreation.form" class="w-full flex flex-column" onsubmit="return false;">
-        @for (item of subscribeSourceCreation.form.controls | keyvalue; track item.key) {
+      <form
+        [formGroup]="subscribeSourceCreation.form"
+        class="w-full flex flex-column"
+        onsubmit="return false;"
+      >
+        @for (item of subscribeSourceCreation.form.controls | keyvalue; track
+        item.key) {
         <label
           style="text-transform: capitalize;"
           [ngClass]="{ 'mt-4': !$first }"
           for="subscribe-source-creation-{{ item.key }}"
-          >{{ item.key }}</label
         >
+          {{ item.key }}
+        </label>
         <input
           class="mt-2"
-          [ngClass]="{ 'ng-invalid': item.value.invalid, 'ng-dirty': item.value.touched }"
+          [ngClass]="{
+            'ng-invalid': item.value.invalid,
+            'ng-dirty': item.value.touched
+          }"
           type="text"
           id="subscribe-source-creation-{{ item.key }}"
           pInputText
@@ -179,7 +266,11 @@ import { QrcodeService } from '@app/qrcode/qrcode.service';
             [outlined]="true"
             (click)="cancelCreateSubscribeSourceDialog()"
           ></p-button>
-          <p-button label="Create" icon="pi pi-check" (click)="acceptCreateSubscribeSourceDialog()"></p-button>
+          <p-button
+            label="Create"
+            icon="pi pi-check"
+            (click)="acceptCreateSubscribeSourceDialog()"
+          ></p-button>
         </div>
       </form>
     </p-dialog>
@@ -194,8 +285,17 @@ import { QrcodeService } from '@app/qrcode/qrcode.service';
       [resizable]="false"
       [baseZIndex]="100"
     >
-      <form [formGroup]="subscribeSourceUpdate.form" class="w-full flex flex-column" onsubmit="return false;">
-        <label style="text-transform: capitalize;" for="subscribe-source-creation-id">id</label>
+      <form
+        [formGroup]="subscribeSourceUpdate.form"
+        class="w-full flex flex-column"
+        onsubmit="return false;"
+      >
+        <label
+          style="text-transform: capitalize;"
+          for="subscribe-source-creation-id"
+        >
+          id
+        </label>
         <input
           class="mt-2"
           type="text"
@@ -205,13 +305,21 @@ import { QrcodeService } from '@app/qrcode/qrcode.service';
           autocomplete="off"
           [disabled]="true"
         />
-        @for (item of subscribeSourceUpdate.form.controls | keyvalue; track item.key) {
-        <label style="text-transform: capitalize;" class="mt-4" for="subscribe-source-creation-{{ item.key }}">{{
-          item.key
-        }}</label>
+        @for (item of subscribeSourceUpdate.form.controls | keyvalue; track
+        item.key) {
+        <label
+          style="text-transform: capitalize;"
+          class="mt-4"
+          for="subscribe-source-creation-{{ item.key }}"
+        >
+          {{ item.key }}
+        </label>
         <input
           class="mt-2"
-          [ngClass]="{ 'ng-invalid': item.value.invalid, 'ng-dirty': item.value.touched }"
+          [ngClass]="{
+            'ng-invalid': item.value.invalid,
+            'ng-dirty': item.value.touched
+          }"
           type="text"
           id="subscribe-source-creation-{{ item.key }}"
           pInputText
@@ -226,7 +334,11 @@ import { QrcodeService } from '@app/qrcode/qrcode.service';
             [outlined]="true"
             (click)="cancelUpdateSubscribeSourceDialog()"
           ></p-button>
-          <p-button label="Save" icon="pi pi-check" (click)="acceptUpdateSubscribeSourceDialog()"></p-button>
+          <p-button
+            label="Save"
+            icon="pi pi-check"
+            (click)="acceptUpdateSubscribeSourceDialog()"
+          ></p-button>
         </div>
       </form>
     </p-dialog>
@@ -249,7 +361,7 @@ import { QrcodeService } from '@app/qrcode/qrcode.service';
       ></ngx-monaco-editor>
     </p-dialog>
     } @if (urlPreview) {
-      <p-dialog
+    <p-dialog
       header="Preview Subscribe Source Content"
       [visible]="true"
       (visibleChange)="cancelUrlPreviewDialog()"
@@ -260,9 +372,16 @@ import { QrcodeService } from '@app/qrcode/qrcode.service';
       [baseZIndex]="100"
     >
       <div class="flex flex-column">
-        <a class="px-link" (click)="copyUrl(urlPreview.url)">{{urlPreview.url}}</a>
+        <a class="px-link" (click)="copyUrl(urlPreview.url)">
+          {{ urlPreview.url }}
+        </a>
         @if (urlPreview.qrcodeDataUrl) {
-          <img class="h-5" [src]="urlPreview.qrcodeDataUrl" alt="qrcode" class="mx-auto" />
+        <img
+          class="h-5"
+          [src]="urlPreview.qrcodeDataUrl"
+          alt="qrcode"
+          class="mx-auto"
+        />
         }
       </div>
     </p-dialog>
@@ -304,14 +423,17 @@ export class WorkspaceComponent implements OnInit {
     shareReplay(1)
   );
   protected readonly clipboardService = inject(ClipboardService);
-  protected readonly tmplEditorOptions: editor.IStandaloneEditorConstructionOptions = {
-    theme: 'vs',
-    language: 'yaml',
-  };
+  protected readonly tmplEditorOptions: editor.IStandaloneEditorConstructionOptions =
+    {
+      theme: 'vs',
+      language: 'yaml',
+    };
   protected readonly qrcodeService = inject(QrcodeService);
 
   confluence$ = new BehaviorSubject<ConfluenceDto | undefined>(undefined);
-  confluenceName$ = this.confluence$.pipe(map((c) => `${c?.name ?? ''}`.toLocaleUpperCase()));
+  confluenceName$ = this.confluence$.pipe(
+    map((c) => `${c?.name ?? ''}`.toLocaleUpperCase())
+  );
   tmpl = '';
   profiles: ProfileDto[] = [];
   subscribeSources: SubscribeSourceDto[] = [];
@@ -337,9 +459,9 @@ export class WorkspaceComponent implements OnInit {
     content: string;
   };
   urlPreview?: {
-    url: string
+    url: string;
     qrcodeDataUrl?: string;
-  }
+  };
 
   ngOnInit() {
     this.confluenceId$
@@ -418,7 +540,11 @@ export class WorkspaceComponent implements OnInit {
 
   resetTmpl() {
     this.tmpl = this.confluence$.getValue()?.template ?? '';
-    this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Reset Success' });
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Success',
+      detail: 'Reset Success',
+    });
   }
 
   openCreateSubscribeSourceDialog() {
@@ -509,7 +635,10 @@ export class WorkspaceComponent implements OnInit {
       return;
     }
     this.confluenceService
-      .updateSubscribeSource(this.subscribeSourceUpdate.value.id, form.value as RecursiveNonNullable<typeof form.value>)
+      .updateSubscribeSource(
+        this.subscribeSourceUpdate.value.id,
+        form.value as RecursiveNonNullable<SubscribeSourceUpdateDto>
+      )
       .pipe(
         combineLatestWith(this.confluenceId$),
         switchMap(([_, id]) => this.confluenceService.getConfluenceById(id)),
@@ -635,41 +764,47 @@ export class WorkspaceComponent implements OnInit {
     this.configContentPreview = undefined;
   }
 
-  formatTime = format
+  formatTime = format;
 
   createProfile() {
-    this.confluenceId$.pipe(
-      take(1),
-      switchMap(id => this.confluenceService.addProfile({ confluence_id: id })),
-      combineLatestWith(this.confluenceId$),
-      switchMap(([_, id]) => this.confluenceService.getConfluenceById(id)),
-      takeUntilDestroyed(this.destoryRef)
-    ).subscribe({
-      next: (c) => {
-        this.confluence$.next(c);
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Success',
-          detail: 'Remove successfully',
-        });
-      },
-      error: (err) => {
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Error',
-          detail: err?.message,
-        });
-      },
-    });
-  }
-
-  removeProfile (id: number) {
-    this.confluenceService.removeProfile(id)
+    this.confluenceId$
       .pipe(
-       combineLatestWith(this.confluenceId$),
+        take(1),
+        switchMap((id) =>
+          this.confluenceService.addProfile({ confluence_id: id })
+        ),
+        combineLatestWith(this.confluenceId$),
         switchMap(([_, id]) => this.confluenceService.getConfluenceById(id)),
         takeUntilDestroyed(this.destoryRef)
-      ).subscribe({
+      )
+      .subscribe({
+        next: (c) => {
+          this.confluence$.next(c);
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Success',
+            detail: 'Remove successfully',
+          });
+        },
+        error: (err) => {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: err?.message,
+          });
+        },
+      });
+  }
+
+  removeProfile(id: number) {
+    this.confluenceService
+      .removeProfile(id)
+      .pipe(
+        combineLatestWith(this.confluenceId$),
+        switchMap(([_, id]) => this.confluenceService.getConfluenceById(id)),
+        takeUntilDestroyed(this.destoryRef)
+      )
+      .subscribe({
         next: (c) => {
           this.confluence$.next(c);
           this.subscribeSourceCreation = undefined;
@@ -689,17 +824,19 @@ export class WorkspaceComponent implements OnInit {
       });
   }
 
-  async copyProfileUrl (item: ProfileDto) {
-    const profileUrl = this.confluenceService.getProfileUrl(item.resource_token);
+  async copyProfileUrl(item: ProfileDto) {
+    const profileUrl = this.confluenceService.getProfileUrl(
+      item.resource_token
+    );
     const qrcodeDataUrl = await this.qrcodeService.toDataURL(profileUrl);
     this.urlPreview = {
       url: profileUrl,
-      qrcodeDataUrl: qrcodeDataUrl
+      qrcodeDataUrl: qrcodeDataUrl,
     };
-    await this.copyUrl(profileUrl)
+    await this.copyUrl(profileUrl);
   }
 
-  async copyUrl (url: string) {
+  async copyUrl(url: string) {
     try {
       await this.clipboardService.copyText(url);
       this.messageService.add({
@@ -716,7 +853,7 @@ export class WorkspaceComponent implements OnInit {
     }
   }
 
-  cancelUrlPreviewDialog () {
+  cancelUrlPreviewDialog() {
     this.urlPreview = undefined;
   }
 }

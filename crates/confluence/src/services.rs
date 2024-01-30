@@ -1,7 +1,50 @@
 use crate::auth::CurrentUser;
-use crate::entities::{confluence, profile, subscribe_source};
-use crate::error::AppError;
+use crate::clash::http::{
+    SUBSCRIPTION_USERINFO_HEADER, SUB_DOWNLOAD, SUB_EXPIRE, SUB_TOTAL, SUB_UPLOAD,
+};
+use crate::clash::{parse_subscription_userinfo_in_header, ClashConfig};
+use crate::config::AppConfig;
+use crate::dto::{SubscribeSourceCreationDto, SubscribeSourceDto, SubscribeSourceUpdateDto};
+use crate::entities::subscribe_source;
+use crate::error::ConfigError;
+use crate::mux::mux_configs;
+use crate::{
+    dto::ProfileCreationDto,
+    entities::profile,
+    error::AppError,
+    {
+        dto::{ConfluenceDto, ConfluenceUpdateDto, ProfileDto},
+        entities,
+        entities::confluence,
+    },
+};
+use axum::extract::{Path, State};
+use axum::http::{header, HeaderMap, HeaderName, HeaderValue, StatusCode};
+use axum::{Extension, Json};
+use futures::future::try_join_all;
+use itertools::izip;
 use sea_orm::prelude::*;
+use sea_orm::ActiveValue::Set;
+use sea_orm::{IntoActiveModel, QuerySelect, TryIntoModel};
+use std::str::FromStr;
+use std::sync::Arc;
+
+#[derive(Clone)]
+pub struct AppState {
+    pub conn: DatabaseConnection,
+    pub config: AppConfig,
+    pub names_generator: Arc<rnglib::RNG>,
+}
+
+impl AppState {
+    pub fn new(conn: DatabaseConnection, config: AppConfig) -> Self {
+        Self {
+            conn,
+            config,
+            names_generator: Arc::new(rnglib::RNG::from(&rnglib::Language::Elven)),
+        }
+    }
+}
 
 pub async fn find_one_confluence_in_db(
     db: &DatabaseConnection,
@@ -26,5 +69,416 @@ pub async fn find_certain_confluence_profiles_and_subscribe_sources(
         subscribe_source::Entity::find()
             .filter(subscribe_source::Column::ConfluenceId.eq(id))
             .all(db)
-    ).map_err(AppError::from)
+    )
+    .map_err(AppError::from)
+}
+
+async fn sync_one_subscribe_source_with_url(
+    sm: subscribe_source::Model,
+    db: &DatabaseConnection,
+) -> Result<subscribe_source::Model, AppError> {
+    let res = reqwest::get(&sm.url).await?;
+    let mut sm = sm.into_active_model();
+    if let Some(sub_userinfo) = parse_subscription_userinfo_in_header(res.headers()) {
+        if let Some(v) = sub_userinfo.get(SUB_DOWNLOAD) {
+            sm.sub_download = Set(Some(*v));
+        };
+        if let Some(v) = sub_userinfo.get(SUB_UPLOAD) {
+            sm.sub_upload = Set(Some(*v));
+        };
+        if let Some(v) = sub_userinfo.get(SUB_TOTAL) {
+            sm.sub_total = Set(Some(*v));
+        };
+        if let Some(v) = sub_userinfo.get(SUB_EXPIRE) {
+            if let Some(ts) = DateTime::from_timestamp_opt(*v, 0) {
+                sm.sub_expire = Set(Some(ts));
+            }
+        };
+    };
+    let content = res.text().await?;
+    sm.content = Set(content);
+    let sm = sm.update(db).await?;
+    Ok(sm)
+}
+
+pub async fn find_one_confluence(
+    Path(id): Path<i32>,
+    Extension(current_user): Extension<CurrentUser>,
+    State(state): State<Arc<AppState>>,
+) -> Result<Json<ConfluenceDto>, AppError> {
+    let db = &state.conn;
+
+    let cm = find_one_confluence_in_db(db, id, &current_user).await?;
+
+    let (pms, sms) = find_certain_confluence_profiles_and_subscribe_sources(db, id).await?;
+
+    let confluence_dto = ConfluenceDto::from_orm(cm, sms, pms);
+    Ok(Json(confluence_dto))
+}
+
+pub async fn find_many_confluences(
+    Extension(current_user): Extension<CurrentUser>,
+    State(state): State<Arc<AppState>>,
+) -> Result<Json<Vec<ConfluenceDto>>, AppError> {
+    let db = &state.conn;
+    let cms = confluence::Entity::find()
+        .filter(confluence::Column::Creator.eq(&current_user.user_id))
+        .all(db)
+        .await;
+
+    let cms = cms?;
+
+    let (pms, sms) = tokio::try_join!(
+        cms.load_many(entities::profile::Entity, db),
+        cms.load_many(entities::subscribe_source::Entity, db)
+    )?;
+
+    let confluences_dto = izip!(cms.into_iter(), pms.into_iter(), sms.into_iter())
+        .map(|(cm, pms, sms)| ConfluenceDto::from_orm(cm, sms, pms))
+        .collect::<Vec<_>>();
+
+    Ok(Json(confluences_dto))
+}
+
+pub async fn create_one_confluence(
+    Extension(current_user): Extension<CurrentUser>,
+    State(state): State<Arc<AppState>>,
+) -> Result<(StatusCode, Json<ConfluenceDto>), AppError> {
+    let db = &state.conn;
+
+    let name = state.names_generator.generate_name();
+
+    let confluence_model = confluence::ActiveModel {
+        mux_content: Set("".into()),
+        template: Set("".into()),
+        creator: Set(current_user.user_id),
+        name: Set(name),
+        ..Default::default()
+    };
+
+    let confluence_model = confluence_model.insert(db).await?;
+
+    Ok((
+        StatusCode::CREATED,
+        Json(ConfluenceDto::from_orm(confluence_model, vec![], vec![])),
+    ))
+}
+
+pub async fn update_one_confluence(
+    Path(id): Path<i32>,
+    State(state): State<Arc<AppState>>,
+    Extension(current_user): Extension<CurrentUser>,
+    Json(confluence_update_dto): Json<ConfluenceUpdateDto>,
+) -> Result<Json<ConfluenceDto>, AppError> {
+    let db = &state.conn;
+    let cm = find_one_confluence_in_db(db, id, &current_user).await?;
+    let mut cm = cm.into_active_model();
+    cm.template = Set(confluence_update_dto.template);
+    cm = cm.save(db).await?;
+    let cm = cm.try_into_model()?;
+
+    let (pms, sms) = find_certain_confluence_profiles_and_subscribe_sources(db, id).await?;
+
+    let confluence_dto = ConfluenceDto::from_orm(cm, sms, pms);
+
+    Ok(Json(confluence_dto))
+}
+
+pub async fn sync_one_confluence(
+    Path(id): Path<i32>,
+    State(state): State<Arc<AppState>>,
+    Extension(current_user): Extension<CurrentUser>,
+) -> Result<Json<ConfluenceDto>, AppError> {
+    let db = &state.conn;
+
+    let cm = find_one_confluence_in_db(db, id, &current_user).await?;
+
+    let (pms, sms) = find_certain_confluence_profiles_and_subscribe_sources(db, id).await?;
+
+    let sms = try_join_all(
+        sms.into_iter()
+            .map(async move |sm| sync_one_subscribe_source_with_url(sm, db).await),
+    )
+    .await?;
+
+    let confluence_dto = ConfluenceDto::from_orm(cm, sms, pms);
+
+    Ok(Json(confluence_dto))
+}
+
+pub async fn mux_one_confluence(
+    Path(id): Path<i32>,
+    State(state): State<Arc<AppState>>,
+    Extension(current_user): Extension<CurrentUser>,
+) -> Result<Json<ConfluenceDto>, AppError> {
+    let db = &state.conn;
+
+    let cm = find_one_confluence_in_db(db, id, &current_user).await?;
+
+    let (pms, sms) = find_certain_confluence_profiles_and_subscribe_sources(db, id).await?;
+
+    let cm = {
+        let template =
+            serde_yaml::from_str::<ClashConfig>(&cm.template).map_err(ConfigError::from)?;
+        let mut sources = vec![];
+        let mut sub_upload: Option<i64> = None;
+        let mut sub_download: Option<i64> = None;
+        let mut sub_expire: Option<DateTime> = None;
+        let mut sub_total: Option<i64> = None;
+        for sm in &sms {
+            let source = &sm.content as &str;
+            let name = &sm.name as &str;
+            let config: ClashConfig = serde_yaml::from_str(source).map_err(ConfigError::from)?;
+            sub_upload = match (sub_upload, sm.sub_upload) {
+                (None, None) => None,
+                (acc, curr) => Some(acc.unwrap_or_default() + curr.unwrap_or_default()),
+            };
+            sub_download = match (sub_download, sm.sub_download) {
+                (None, None) => None,
+                (acc, curr) => Some(acc.unwrap_or_default() + curr.unwrap_or_default()),
+            };
+            sub_total = match (sub_total, sm.sub_total) {
+                (None, None) => None,
+                (acc, curr) => Some(acc.unwrap_or_default() + curr.unwrap_or_default()),
+            };
+            sub_expire = match (sub_expire, sm.sub_expire) {
+                (None, curr) => curr,
+                (last_min, None) => last_min,
+                (Some(last_min), Some(curr)) => {
+                    if last_min < curr {
+                        Some(last_min)
+                    } else {
+                        Some(curr)
+                    }
+                }
+            };
+            sources.push((name, config));
+        }
+        let mux_config = mux_configs(&template, &sources)?;
+        let mux_content = serde_yaml::to_string(&mux_config).map_err(ConfigError::from)?;
+        let mut cm = cm.into_active_model();
+        cm.mux_content = Set(mux_content);
+        cm.sub_download = Set(sub_upload);
+        cm.sub_expire = Set(sub_expire);
+        cm.sub_total = Set(sub_total);
+        cm.sub_upload = Set(sub_download);
+        cm.update(db).await
+    }?;
+
+    let confluence_dto = ConfluenceDto::from_orm(cm, sms, pms);
+
+    Ok(Json(confluence_dto))
+}
+
+pub async fn delete_one_confluence(
+    State(state): State<Arc<AppState>>,
+    Extension(current_user): Extension<CurrentUser>,
+    Path(id): Path<i32>,
+) -> Result<StatusCode, AppError> {
+    let db = &state.conn;
+    let cm = find_one_confluence_in_db(db, id, &current_user).await?;
+    let cm = cm.into_active_model();
+    cm.delete(db).await?;
+    Ok(StatusCode::OK)
+}
+
+pub async fn find_one_profile_as_subscription_by_token(
+    Path(token): Path<String>,
+    State(state): State<Arc<AppState>>,
+) -> Result<(HeaderMap, String), AppError> {
+    let db = &state.conn;
+    let mut pms = profile::Entity::find()
+        .filter(profile::Column::ResourceToken.eq(&token))
+        .find_with_related(confluence::Entity)
+        .limit(1)
+        .all(db)
+        .await?;
+    if let Some((_, mut cms)) = pms.pop() {
+        let cm = cms.pop().ok_or_else(|| {
+            AppError::DbNotFound(format!("cannot find profile token = {}", token))
+        })?;
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            header::CONTENT_TYPE,
+            HeaderValue::from_static("application/octet-stream; charset=utf-8"),
+        );
+        headers.insert(
+            header::CONTENT_TYPE,
+            HeaderValue::from_static("attachment; filename=Confluence.yaml"),
+        );
+        let sub_expr_to_part = |a: DateTime| {
+            let ts = a.timestamp();
+            format!("{SUB_EXPIRE}={ts}")
+        };
+        match [
+            cm.sub_upload.map(|a| format!("{SUB_UPLOAD}={a}")),
+            cm.sub_download.map(|a| format!("{SUB_DOWNLOAD}={a}")),
+            cm.sub_total.map(|a| format!("{SUB_TOTAL}={a}")),
+            cm.sub_expire.map(sub_expr_to_part),
+        ] {
+            [None, None, None, None] => {}
+            parts => {
+                headers.insert(
+                    HeaderName::from_str(SUBSCRIPTION_USERINFO_HEADER).unwrap(),
+                    HeaderValue::from_str(
+                        &parts
+                            .into_iter()
+                            .flatten()
+                            .intersperse(String::from("; "))
+                            .collect::<String>(),
+                    )
+                    .map_err(|err| AppError::Other(err.into()))?,
+                );
+            }
+        };
+        let mux_content = cm.mux_content;
+        Ok((headers, mux_content))
+    } else {
+        Err(AppError::DbNotFound(format!(
+            "cannot find profile token = {}",
+            token
+        )))
+    }
+}
+
+pub async fn create_one_profile(
+    State(state): State<Arc<AppState>>,
+    Extension(current_user): Extension<CurrentUser>,
+    Json(profile_creation_dto): Json<ProfileCreationDto>,
+) -> Result<Json<ProfileDto>, AppError> {
+    let db = &state.conn;
+    find_one_confluence_in_db(db, profile_creation_dto.confluence_id, &current_user).await?;
+    let mut pms = profile::ActiveModel {
+        resource_token: Set(Uuid::new_v4().to_string()),
+        confluence_id: Set(profile_creation_dto.confluence_id),
+        ..Default::default()
+    };
+    pms = pms.save(db).await?;
+    let pms = pms.try_into_model()?;
+    Ok(Json(pms.into()))
+}
+
+pub async fn delete_one_profile(
+    Path(id): Path<i32>,
+    State(state): State<Arc<AppState>>,
+    Extension(current_user): Extension<CurrentUser>,
+) -> Result<(), AppError> {
+    let db = &state.conn;
+    let mut pm = profile::Entity::find_by_id(id)
+        .find_with_related(confluence::Entity)
+        .filter(confluence::Column::Id.eq(&current_user.user_id))
+        .limit(1)
+        .all(db)
+        .await?;
+    if let Some(pm) = pm.pop() {
+        let pam = pm.0.into_active_model();
+        pam.delete(db).await?;
+        Ok(())
+    } else {
+        Err(AppError::DbNotFound(format!(
+            "cannot find profile id = {}",
+            id
+        )))
+    }
+}
+
+pub async fn create_one_subscribe_source(
+    State(state): State<Arc<AppState>>,
+    Extension(current_user): Extension<CurrentUser>,
+    Json(subscribe_creation_dto): Json<SubscribeSourceCreationDto>,
+) -> Result<Json<SubscribeSourceDto>, AppError> {
+    let db = &state.conn;
+    find_one_confluence_in_db(db, subscribe_creation_dto.confluence_id, &current_user).await?;
+    let mut pms = subscribe_source::ActiveModel {
+        confluence_id: Set(subscribe_creation_dto.confluence_id),
+        url: Set(subscribe_creation_dto.url),
+        name: Set(subscribe_creation_dto.name),
+        content: Set(String::new()),
+        ..Default::default()
+    };
+    pms = pms.save(db).await?;
+    let pms = pms.try_into_model()?;
+    Ok(Json(pms.into()))
+}
+
+pub async fn update_one_subscribe_source(
+    Path(id): Path<i32>,
+    State(state): State<Arc<AppState>>,
+    Extension(current_user): Extension<CurrentUser>,
+    Json(subscribe_update_dto): Json<SubscribeSourceUpdateDto>,
+) -> Result<Json<SubscribeSourceDto>, AppError> {
+    let db = &state.conn;
+    let mut pm = subscribe_source::Entity::find_by_id(id)
+        .find_with_related(confluence::Entity)
+        .filter(confluence::Column::Id.eq(&current_user.user_id))
+        .limit(1)
+        .all(db)
+        .await?;
+    if let Some(pm) = pm.pop() {
+        let mut pam = pm.0.into_active_model();
+        if let Some(name) = subscribe_update_dto.name {
+            pam.name = Set(name);
+        }
+        if let Some(url) = subscribe_update_dto.url {
+            pam.url = Set(url);
+        };
+        if let Some(content) = subscribe_update_dto.content {
+            pam.content = Set(content);
+        }
+        let pam = pam.save(db).await?;
+        let pm = pam.try_into_model()?;
+        Ok(Json(pm.into()))
+    } else {
+        Err(AppError::DbNotFound(format!(
+            "cannot find subscribe source id = {}",
+            id
+        )))
+    }
+}
+
+pub async fn delete_one_subscribe_source(
+    State(state): State<Arc<AppState>>,
+    Extension(current_user): Extension<CurrentUser>,
+    Path(id): Path<i32>,
+) -> Result<(), AppError> {
+    let db = &state.conn;
+    let mut pm = subscribe_source::Entity::find_by_id(id)
+        .find_with_related(confluence::Entity)
+        .filter(confluence::Column::Creator.eq(&current_user.user_id))
+        .limit(1)
+        .all(db)
+        .await?;
+    if let Some(pm) = pm.pop() {
+        let pam = pm.0.into_active_model();
+        pam.delete(db).await?;
+        Ok(())
+    } else {
+        Err(AppError::DbNotFound(format!(
+            "cannot find subscribe source id = {}",
+            id
+        )))
+    }
+}
+
+pub async fn sync_one_subscribe_source(
+    State(state): State<Arc<AppState>>,
+    Extension(current_user): Extension<CurrentUser>,
+    Path(id): Path<i32>,
+) -> Result<(), AppError> {
+    let db = &state.conn;
+    let mut pm = subscribe_source::Entity::find_by_id(id)
+        .find_with_related(confluence::Entity)
+        .filter(confluence::Column::Creator.eq(&current_user.user_id))
+        .limit(1)
+        .all(db)
+        .await?;
+    if let Some((sm, _)) = pm.pop() {
+        sync_one_subscribe_source_with_url(sm, db).await?;
+        Ok(())
+    } else {
+        Err(AppError::DbNotFound(format!(
+            "cannot find subscribe source id = {}",
+            id
+        )))
+    }
 }

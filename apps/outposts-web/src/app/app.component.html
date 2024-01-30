@@ -1,10 +1,8 @@
-<div
-  class="layout-wrapper"
-  [ngClass]="{
+<div class="layout-wrapper" [ngClass]="{
       'layout-light': colorSchema() === 'light',
       'layout-dark': colorSchema() === 'dark'
   }">
-  <app-topbar/>
+    <app-topbar />
   <div class="layout-mask" [ngClass]="{ 'layout-mask-active': isMenuActive }" (click)="hideMenu()"></div>
   <div class="layout-content">
     <app-menu></app-menu>
@@ -12,5 +10,5 @@
       <router-outlet></router-outlet>
     </div>
   </div>
-  <app-footer/>
+  <app-footer />
 </div>

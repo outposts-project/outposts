@@ -12,4 +12,8 @@ export interface ConfluenceDto {
   subscribe_sources: Array<SubscribeSourceDto>;
   profiles: Array<ProfileDto>;
   name: string;
+  sub_upload?: number;
+  sub_download?: number;
+  sub_total?: number;
+  sub_expire?: number;
 }

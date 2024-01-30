@@ -1,6 +1,18 @@
 {
-  "printWidth": 120,
-  "semi": true,
   "tabWidth": 2,
-  "useTabs": false
+  "semi": true,
+  "singleQuote": true,
+  "indentStyle": "space",
+  "indentWidth": 2,
+  "lineWidth": 120,
+  "overrides": [
+    {
+      "files": [
+        "*.component.ts"
+      ],
+      "options": {
+        "htmlWhitespaceSensitivity": "ignore"
+      }
+    }
+  ]
 }

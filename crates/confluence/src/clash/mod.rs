@@ -1,3 +1,6 @@
+pub mod http;
+
+pub use http::parse_subscription_userinfo_in_header;
 use serde::{Deserialize, Serialize};
 use serde_yaml::Value;
 use std::collections::HashMap;

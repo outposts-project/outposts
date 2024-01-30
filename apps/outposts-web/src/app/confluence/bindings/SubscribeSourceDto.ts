@@ -8,4 +8,8 @@ export interface SubscribeSourceDto {
   confluence_id: number;
   name: string;
   content: string;
+  sub_upload?: number;
+  sub_download?: number;
+  sub_total?: number;
+  sub_expire?: number;
 }

@@ -9,9 +9,9 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
     pub confluence_id: i32,
-    #[sea_orm(auto_create_time)]
+    #[sea_orm(column_type = "Timestamp")]
     pub created_at: DateTime,
-    #[sea_orm(auto_update_time)]
+    #[sea_orm(column_type = "Timestamp")]
     pub updated_at: DateTime,
     pub resource_token: String,
 }
