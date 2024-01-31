@@ -17,9 +17,9 @@ import { MonacoEditorModule } from 'ngx-monaco-editor-v2';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
-import { ToastModule } from 'primeng/toast';
 import { ClipboardModule } from '@app/clipboard/clipboard.module';
 import { QrcodeModule } from '@app/qrcode/qrcode.module';
+import { SkeletonModule } from 'primeng/skeleton';
 
 @NgModule({
   declarations: [DashboardComponent, WorkspaceComponent],
@@ -41,9 +41,9 @@ import { QrcodeModule } from '@app/qrcode/qrcode.module';
     DialogModule,
     ReactiveFormsModule,
     InputTextModule,
-    ToastModule,
     ClipboardModule,
     QrcodeModule,
+    SkeletonModule,
   ],
 })
 export class ConfluenceModule {}

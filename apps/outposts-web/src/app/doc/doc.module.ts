@@ -16,12 +16,21 @@ import { DocTableOfContentsComponent } from '@app/doc/components/table-of-conten
 import { RouterLink } from '@angular/router';
 import { WINDOW } from '@app/core/providers/window';
 import { DocLayoutComponent } from '@app/doc/components/layout/doc-layout.component';
-import { ToastModule } from 'primeng/toast';
 
 @NgModule({
   providers: [DocService, DocTableOfContentsLoader, DocTableOfContentsSpy],
-  declarations: [DocSectionComponent, DocClipboardButtonComponent, DocTableOfContentsComponent, DocLayoutComponent],
-  exports: [DocSectionComponent, DocClipboardButtonComponent, DocTableOfContentsComponent, DocLayoutComponent],
+  declarations: [
+    DocSectionComponent,
+    DocClipboardButtonComponent,
+    DocTableOfContentsComponent,
+    DocLayoutComponent,
+  ],
+  exports: [
+    DocSectionComponent,
+    DocClipboardButtonComponent,
+    DocTableOfContentsComponent,
+    DocLayoutComponent,
+  ],
   imports: [
     CommonModule,
     SkeletonModule,
@@ -29,7 +38,6 @@ import { ToastModule } from 'primeng/toast';
     ButtonModule,
     MessageModule,
     RouterLink,
-    ToastModule,
     MarkdownModule.forRoot({
       loader: HttpClient,
       sanitize: SecurityContext.NONE,
@@ -51,7 +59,8 @@ export class DocModule {
     if (isPlatformBrowser(this.platformId) && this?.window?.Prism?.plugins) {
       const PrismPlugins = this?.window.Prism.plugins;
       if (PrismPlugins['autoloader']) {
-        PrismPlugins['autoloader'].languages_path = '/assets/prismjs/components/';
+        PrismPlugins['autoloader'].languages_path =
+          '/assets/prismjs/components/';
       }
     }
   }

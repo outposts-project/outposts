@@ -21,7 +21,6 @@ import type { SubscribeSourceDto } from '../bindings/SubscribeSourceDto';
 import type { ProfileDto } from '../bindings/ProfileDto';
 import type { SubscribeSourceUpdateDto } from '../bindings/SubscribeSourceUpdateDto';
 import { isEqual } from 'lodash-es';
-import { MessageService } from 'primeng/api';
 import {
   FormBuilder,
   FormControl,
@@ -33,6 +32,7 @@ import type { RecursiveNonNullable } from '@app/core/utils/type-assert';
 import { format } from 'date-fns';
 import { ClipboardService } from '@app/clipboard/clipboard.service';
 import { QrcodeService } from '@app/qrcode/qrcode.service';
+import { AppOverlayService } from '@app/core/servces/app-overlay.service';
 
 @Component({
   selector: 'confluence-workspace',
@@ -220,7 +220,6 @@ import { QrcodeService } from '@app/qrcode/qrcode.service';
         </p-dataView>
       </p-fieldset>
     </div>
-    <p-toast [baseZIndex]="999"></p-toast>
     @if (subscribeSourceCreation) {
     <p-dialog
       header="New Subscribe Source"
@@ -409,13 +408,13 @@ import { QrcodeService } from '@app/qrcode/qrcode.service';
       }
     }
   `,
-  providers: [MessageService],
+  providers: [],
 })
 export class WorkspaceComponent implements OnInit {
   protected readonly confluenceService = inject(ConfluenceService);
   protected readonly route = inject(ActivatedRoute);
   protected readonly destoryRef = inject(DestroyRef);
-  protected readonly messageService = inject(MessageService);
+  protected readonly overlayService = inject(AppOverlayService);
   protected readonly fb = inject(FormBuilder);
   protected readonly confluenceId$ = this.route.params.pipe(
     map((params) => parseInt(params['id'])),
@@ -467,16 +466,9 @@ export class WorkspaceComponent implements OnInit {
     this.confluenceId$
       .pipe(
         switchMap((id) =>
-          this.confluenceService.getConfluenceById(id).pipe(
-            catchError((err) => {
-              this.messageService.add({
-                severity: 'error',
-                summary: 'Error',
-                detail: err?.message,
-              });
-              return EMPTY;
-            })
-          )
+          this.overlayService
+            .withSuspense(this.confluenceService.getConfluenceById(id))
+            .pipe(catchError((_) => EMPTY))
         ),
         takeUntilDestroyed(this.destoryRef)
       )
@@ -508,39 +500,32 @@ export class WorkspaceComponent implements OnInit {
   }
 
   saveTmpl() {
-    this.confluence$
-      .pipe(
-        take(1),
-        filter((c): c is ConfluenceDto => !!c),
-        switchMap((c) =>
-          this.confluenceService.updateConfluence(c.id, {
-            template: this.tmpl,
-          })
-        ),
-        takeUntilDestroyed(this.destoryRef)
+    this.overlayService
+      .withSuspense(
+        this.confluence$.pipe(
+          take(1),
+          filter((c): c is ConfluenceDto => !!c),
+          switchMap((c) =>
+            this.confluenceService.updateConfluence(c.id, {
+              template: this.tmpl,
+            })
+          ),
+          takeUntilDestroyed(this.destoryRef)
+        )
       )
-      .subscribe({
-        next: (c) => {
-          this.confluence$.next(c);
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Success',
-            detail: 'Saved successfully',
-          });
-        },
-        error: (err) => {
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: err?.message,
-          });
-        },
+      .subscribe((c) => {
+        this.confluence$.next(c);
+        this.overlayService.toast({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Saved successfully',
+        });
       });
   }
 
   resetTmpl() {
     this.tmpl = this.confluence$.getValue()?.template ?? '';
-    this.messageService.add({
+    this.overlayService.toast({
       severity: 'success',
       summary: 'Success',
       detail: 'Reset Success',
@@ -579,33 +564,29 @@ export class WorkspaceComponent implements OnInit {
     if (!form.valid) {
       return;
     }
-    this.confluenceService
-      .addSubscribeSource({
-        ...this.subscribeSourceCreation.value,
-        ...(form.value as RecursiveNonNullable<typeof form.value>),
-      })
-      .pipe(
-        combineLatestWith(this.confluenceId$),
-        switchMap(([_, id]) => this.confluenceService.getConfluenceById(id)),
-        takeUntilDestroyed(this.destoryRef)
+    this.overlayService
+      .withSuspense(
+        this.confluenceService
+          .addSubscribeSource({
+            ...this.subscribeSourceCreation.value,
+            ...(form.value as RecursiveNonNullable<typeof form.value>),
+          })
+          .pipe(
+            combineLatestWith(this.confluenceId$),
+            switchMap(([_, id]) =>
+              this.confluenceService.getConfluenceById(id)
+            ),
+            takeUntilDestroyed(this.destoryRef)
+          )
       )
-      .subscribe({
-        next: (c) => {
-          this.confluence$.next(c);
-          this.subscribeSourceCreation = undefined;
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Success',
-            detail: 'Saved successfully',
-          });
-        },
-        error: (err) => {
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: err?.message,
-          });
-        },
+      .subscribe((c) => {
+        this.confluence$.next(c);
+        this.subscribeSourceCreation = undefined;
+        this.overlayService.toast({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Saved successfully',
+        });
       });
   }
 
@@ -634,89 +615,68 @@ export class WorkspaceComponent implements OnInit {
     if (!form.valid) {
       return;
     }
-    this.confluenceService
-      .updateSubscribeSource(
-        this.subscribeSourceUpdate.value.id,
-        form.value as RecursiveNonNullable<SubscribeSourceUpdateDto>
+    this.overlayService
+      .withSuspense(
+        this.confluenceService
+          .updateSubscribeSource(
+            this.subscribeSourceUpdate.value.id,
+            form.value as RecursiveNonNullable<SubscribeSourceUpdateDto>
+          )
+          .pipe(
+            combineLatestWith(this.confluenceId$),
+            switchMap(([_, id]) =>
+              this.confluenceService.getConfluenceById(id)
+            ),
+            takeUntilDestroyed(this.destoryRef)
+          )
       )
-      .pipe(
-        combineLatestWith(this.confluenceId$),
-        switchMap(([_, id]) => this.confluenceService.getConfluenceById(id)),
-        takeUntilDestroyed(this.destoryRef)
-      )
-      .subscribe({
-        next: (c) => {
-          this.confluence$.next(c);
-          this.subscribeSourceUpdate = undefined;
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Success',
-            detail: 'Updated successfully',
-          });
-        },
-        error: (err) => {
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: err?.message,
-          });
-        },
+      .subscribe((c) => {
+        this.confluence$.next(c);
+        this.subscribeSourceUpdate = undefined;
+        this.overlayService.toast({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Updated successfully',
+        });
       });
   }
 
   removeSubscribeSource(id: number) {
-    this.confluenceService
-      .removeSubscribeSource(id)
-      .pipe(
-        combineLatestWith(this.confluenceId$),
-        switchMap(([_, id]) => this.confluenceService.getConfluenceById(id)),
-        takeUntilDestroyed(this.destoryRef)
+    this.overlayService
+      .withSuspense(
+        this.confluenceService.removeSubscribeSource(id).pipe(
+          combineLatestWith(this.confluenceId$),
+          switchMap(([_, id]) => this.confluenceService.getConfluenceById(id)),
+          takeUntilDestroyed(this.destoryRef)
+        )
       )
-      .subscribe({
-        next: (c) => {
-          this.confluence$.next(c);
-          this.subscribeSourceCreation = undefined;
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Success',
-            detail: 'Remove successfully',
-          });
-        },
-        error: (err) => {
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: err?.message,
-          });
-        },
+      .subscribe((c) => {
+        this.confluence$.next(c);
+        this.subscribeSourceCreation = undefined;
+        this.overlayService.toast({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Remove successfully',
+        });
       });
   }
 
   syncConfluence() {
-    this.confluenceId$
-      .pipe(
-        take(1),
-        switchMap((id) => this.confluenceService.syncConfluence(id)),
-        takeUntilDestroyed(this.destoryRef)
+    this.overlayService
+      .withSuspense(
+        this.confluenceId$.pipe(
+          take(1),
+          switchMap((id) => this.confluenceService.syncConfluence(id)),
+          takeUntilDestroyed(this.destoryRef)
+        )
       )
-      .subscribe({
-        next: (c) => {
-          this.confluence$.next(c);
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Success',
-            detail: 'Sync successfully',
-          });
-        },
-        error: (err) => {
-          console.log('123');
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: err?.message,
-          });
-        },
-      });
+      .subscribe(() =>
+        this.overlayService.toast({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Sync successfully',
+        })
+      );
   }
 
   openPreviewSubscribeSourceContentDialog(item: SubscribeSourceDto) {
@@ -728,29 +688,21 @@ export class WorkspaceComponent implements OnInit {
   }
 
   muxConfluence() {
-    this.confluenceId$
-      .pipe(
-        take(1),
-        switchMap((id) => this.confluenceService.muxConfluence(id)),
-        takeUntilDestroyed(this.destoryRef)
+    this.overlayService
+      .withSuspense(
+        this.confluenceId$.pipe(
+          take(1),
+          switchMap((id) => this.confluenceService.muxConfluence(id)),
+          takeUntilDestroyed(this.destoryRef)
+        )
       )
-      .subscribe({
-        next: (c) => {
-          this.confluence$.next(c);
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Success',
-            detail: 'Mux successfully',
-          });
-        },
-        error: (err) => {
-          console.log('123');
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: err?.message,
-          });
-        },
+      .subscribe((c) => {
+        this.confluence$.next(c);
+        this.overlayService.toast({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Mux successfully',
+        });
       });
   }
 
@@ -767,60 +719,45 @@ export class WorkspaceComponent implements OnInit {
   formatTime = format;
 
   createProfile() {
-    this.confluenceId$
-      .pipe(
-        take(1),
-        switchMap((id) =>
-          this.confluenceService.addProfile({ confluence_id: id })
-        ),
-        combineLatestWith(this.confluenceId$),
-        switchMap(([_, id]) => this.confluenceService.getConfluenceById(id)),
-        takeUntilDestroyed(this.destoryRef)
+    this.overlayService
+      .withSuspense(
+        this.confluenceId$.pipe(
+          take(1),
+          switchMap((id) =>
+            this.confluenceService.addProfile({ confluence_id: id })
+          ),
+          combineLatestWith(this.confluenceId$),
+          switchMap(([_, id]) => this.confluenceService.getConfluenceById(id)),
+          takeUntilDestroyed(this.destoryRef)
+        )
       )
-      .subscribe({
-        next: (c) => {
-          this.confluence$.next(c);
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Success',
-            detail: 'Remove successfully',
-          });
-        },
-        error: (err) => {
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: err?.message,
-          });
-        },
+      .subscribe((c) => {
+        this.confluence$.next(c);
+        this.overlayService.toast({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Remove successfully',
+        });
       });
   }
 
   removeProfile(id: number) {
-    this.confluenceService
-      .removeProfile(id)
-      .pipe(
-        combineLatestWith(this.confluenceId$),
-        switchMap(([_, id]) => this.confluenceService.getConfluenceById(id)),
-        takeUntilDestroyed(this.destoryRef)
+    this.overlayService
+      .withSuspense(
+        this.confluenceService.removeProfile(id).pipe(
+          combineLatestWith(this.confluenceId$),
+          switchMap(([_, id]) => this.confluenceService.getConfluenceById(id)),
+          takeUntilDestroyed(this.destoryRef)
+        )
       )
-      .subscribe({
-        next: (c) => {
-          this.confluence$.next(c);
-          this.subscribeSourceCreation = undefined;
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Success',
-            detail: 'Remove successfully',
-          });
-        },
-        error: (err) => {
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: err?.message,
-          });
-        },
+      .subscribe((c) => {
+        this.confluence$.next(c);
+        this.subscribeSourceCreation = undefined;
+        this.overlayService.toast({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Remove successfully',
+        });
       });
   }
 
@@ -839,13 +776,13 @@ export class WorkspaceComponent implements OnInit {
   async copyUrl(url: string) {
     try {
       await this.clipboardService.copyText(url);
-      this.messageService.add({
+      this.overlayService.toast({
         severity: 'success',
         summary: 'Success',
         detail: 'Copy successfully',
       });
     } catch (err: unknown) {
-      this.messageService.add({
+      this.overlayService.toast({
         severity: 'error',
         summary: 'Error',
         detail: (<Error>err)?.message,
