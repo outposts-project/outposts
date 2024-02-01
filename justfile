@@ -1,3 +1,5 @@
+set windows-shell := ["pwsh.exe", "-c"]
+
 dev-confluence:
   cargo watch -w crates/confluence -x "run --bin confluence_server"
 

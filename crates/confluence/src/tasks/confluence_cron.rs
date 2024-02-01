@@ -1,14 +1,13 @@
-use sea_orm::{prelude::*, Set, Unchanged};
-
-use crate::entities::confluence;
-use crate::services::mux_one_confluence_impl;
 use crate::{
+    entities::confluence,
+    services::mux_one_confluence_impl,
     error::AppError,
     services::{
         find_certain_confluence_profiles_and_subscribe_sources, sync_one_subscribe_source_with_url,
         AppState,
-    },
+    }
 };
+use sea_orm::{prelude::*, Set, Unchanged};
 use chrono::Utc;
 use chrono_tz::Tz;
 use cron::Schedule;
@@ -42,8 +41,6 @@ impl ConfluenceCronTask {
             .filter(confluence::Column::CronNextAt.lte(Utc::now()))
             .all(db)
             .await?;
-
-        println!("cms len {} {}", Utc::now(), cms.len());
 
         for cm in cms {
             let id = cm.id;

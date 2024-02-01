@@ -42,7 +42,8 @@
           "options": {
             "allowedCommonJsDependencies": [
               "camelcase-keys",
-              "qrcode"
+              "qrcode",
+              "@datasert/cronjs-parser"
             ],
             "assets": [
               "apps/outposts-web/src/favicon.ico",
