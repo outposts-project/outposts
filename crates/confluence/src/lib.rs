@@ -11,3 +11,4 @@ pub mod error;
 pub mod migrations;
 pub mod mux;
 pub mod services;
+pub mod tasks;

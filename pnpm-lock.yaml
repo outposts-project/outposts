@@ -32,6 +32,9 @@ importers:
       '@angular/router':
         specifier: ^17.0.0
         version: 17.0.6(@angular/common@17.0.6)(@angular/core@17.0.6)(@angular/platform-browser@17.0.6)(rxjs@7.8.1)
+      '@datasert/cronjs-parser':
+        specifier: ^1.4.0
+        version: 1.4.0
       '@logto/browser':
         specifier: ^2.1.2
         version: 2.2.1
@@ -1852,6 +1855,7 @@ packages:
     engines: {node: '>=14.*'}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
     requiresBuild: true
     dev: true
     optional: true
@@ -1861,6 +1865,7 @@ packages:
     engines: {node: '>=14.*'}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
     requiresBuild: true
     dev: true
     optional: true
@@ -1870,6 +1875,7 @@ packages:
     engines: {node: '>=14.*'}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
     requiresBuild: true
     dev: true
     optional: true
@@ -1879,6 +1885,7 @@ packages:
     engines: {node: '>=14.*'}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
     requiresBuild: true
     dev: true
     optional: true
@@ -1916,6 +1923,10 @@ packages:
     dependencies:
       '@jridgewell/trace-mapping': 0.3.9
     dev: true
+
+  /@datasert/cronjs-parser@1.4.0:
+    resolution: {integrity: sha512-zHGlrWanS4Zjgf0aMi/sp/HTSa2xWDEtXW9xshhlGf/jPx3zTIqfX14PZnoFF7XVOwzC49Zy0SFWG90rlRY36Q==}
+    dev: false
 
   /@discoveryjs/json-ext@0.5.7:
     resolution: {integrity: sha512-dBVuXR082gk3jsFp7Rd/JI4kytwGHecnCoTtXFb7DB6CNHp4rg5k1bhg0nWdLGLnOV71lmDzGQaLMy8iPLY0pw==}

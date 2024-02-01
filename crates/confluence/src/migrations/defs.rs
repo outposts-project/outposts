@@ -15,6 +15,11 @@ pub enum Confluence {
     SubDownload,
     SubTotal,
     SubExpire,
+    CronExprTz,
+    CronExpr,
+    CronPrevAt,
+    CronErr,
+    CronNextAt,
 }
 
 #[derive(DeriveIden)]

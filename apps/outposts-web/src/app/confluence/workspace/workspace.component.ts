@@ -12,6 +12,7 @@ import {
   combineLatestWith,
   shareReplay,
   tap,
+  delayWhen,
 } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -33,6 +34,7 @@ import { format } from 'date-fns';
 import { ClipboardService } from '@app/clipboard/clipboard.service';
 import { QrcodeService } from '@app/qrcode/qrcode.service';
 import { AppOverlayService } from '@app/core/servces/app-overlay.service';
+import { hourPlusLevelCronExprValidator } from '../validators/cron-expr.validators';
 
 @Component({
   selector: 'confluence-workspace',
@@ -218,6 +220,57 @@ import { AppOverlayService } from '@app/core/servces/app-overlay.service';
             </div>
           </ng-template>
         </p-dataView>
+        <div
+          class="flex justify-content-between align-items-center surface-border border-y-1 mt-4 mb-4 p-3 font-bold"
+          style="background: #f9fafb;"
+        >
+          <div class="text-xl">Sync Schedule</div>
+          <div class="flex gap-2">
+            <p-button
+              label="Save"
+              icon="pi pi-check"
+              (click)="saveCron()"
+              [outlined]="true"
+            ></p-button>
+          </div>
+        </div>
+        <div class="m-0">
+          <form
+            [formGroup]="cronUpdateForm"
+            class="w-full flex flex-column"
+            onsubmit="return false;"
+          >
+            <input
+              [ngClass]="{
+                'ng-invalid': cronUpdateForm.controls.cronExpr.invalid,
+                'ng-dirty': cronUpdateForm.controls.cronExpr.touched
+              }"
+              type="text"
+              id="cron-update-cron-expr"
+              pInputText
+              formControlName="cronExpr"
+              autocomplete="off"
+            />
+            <small
+              class="mt-2"
+              [ngClass]="{
+                'text-red-500':
+                  cronUpdateForm.controls.cronExpr.touched &&
+                  cronUpdateForm.controls.cronExpr.invalid
+              }"
+            >
+              @if (cronUpdateForm.controls.cronExpr.touched &&
+              cronUpdateForm.controls.cronExpr.invalid &&
+              !cronUpdateForm.controls.cronExpr.errors?.['emptyCronExpr']) {
+              <span style="text-transform: capitalize;">
+                {{ cronUpdateForm.controls.cronExpr.errors?.['message'] || '123' }}
+              </span>
+              } @else { Support unix style cron expr, min unit hour, such as
+              <code>0 0 8 * * *</code>
+              }
+            </small>
+          </form>
+        </div>
       </p-fieldset>
     </div>
     @if (subscribeSourceCreation) {
@@ -461,6 +514,9 @@ export class WorkspaceComponent implements OnInit {
     url: string;
     qrcodeDataUrl?: string;
   };
+  cronUpdateForm = this.fb.group({
+    cronExpr: this.fb.control('', [hourPlusLevelCronExprValidator]),
+  });
 
   ngOnInit() {
     this.confluenceId$
@@ -497,6 +553,19 @@ export class WorkspaceComponent implements OnInit {
         takeUntilDestroyed(this.destoryRef)
       )
       .subscribe((ps) => (this.profiles = ps));
+
+    this.confluence$
+      .pipe(
+        map((c) => c?.cron_expr ?? ''),
+        distinctUntilChanged(),
+        filter((v) => v !== this.cronUpdateForm.value.cronExpr),
+        takeUntilDestroyed(this.destoryRef)
+      )
+      .subscribe((expr) => {
+        this.cronUpdateForm.patchValue({
+          cronExpr: expr,
+        });
+      });
   }
 
   saveTmpl() {
@@ -757,6 +826,41 @@ export class WorkspaceComponent implements OnInit {
           severity: 'success',
           summary: 'Success',
           detail: 'Remove successfully',
+        });
+      });
+  }
+
+  saveCron() {
+    const form = this.cronUpdateForm;
+    form.markAllAsTouched();
+    if (!form.valid) {
+      return;
+    }
+    this.overlayService
+      .withSuspense(
+        this.confluenceId$.pipe(
+          take(1),
+          switchMap((id) =>
+            this.confluenceService
+              .updateConfluenceCron(id, {
+                cron_expr: form.value.cronExpr as Exclude<
+                  typeof form.value.cronExpr,
+                  null | undefined
+                >,
+                cron_expr_tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+              })
+              .pipe(map(() => id))
+          ),
+          switchMap((id) => this.confluenceService.getConfluenceById(id)),
+          takeUntilDestroyed(this.destoryRef)
+        )
+      )
+      .subscribe((c) => {
+        this.confluence$.next(c);
+        this.overlayService.toast({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Saved successfully',
         });
       });
   }

@@ -4,7 +4,10 @@ use crate::clash::http::{
 };
 use crate::clash::{parse_subscription_userinfo_in_header, ClashConfig};
 use crate::config::AppConfig;
-use crate::dto::{SubscribeSourceCreationDto, SubscribeSourceDto, SubscribeSourceUpdateDto};
+use crate::dto::{
+    ConfluenceUpdateCronDto, SubscribeSourceCreationDto, SubscribeSourceDto,
+    SubscribeSourceUpdateDto,
+};
 use crate::entities::subscribe_source;
 use crate::error::ConfigError;
 use crate::mux::mux_configs;
@@ -21,6 +24,8 @@ use crate::{
 use axum::extract::{Path, State};
 use axum::http::{header, HeaderMap, HeaderName, HeaderValue, StatusCode};
 use axum::{Extension, Json};
+use chrono_tz::Tz;
+use cron::Schedule;
 use futures::future::try_join_all;
 use itertools::izip;
 use sea_orm::prelude::*;
@@ -73,7 +78,7 @@ pub async fn find_certain_confluence_profiles_and_subscribe_sources(
     .map_err(AppError::from)
 }
 
-async fn sync_one_subscribe_source_with_url(
+pub async fn sync_one_subscribe_source_with_url(
     sm: subscribe_source::Model,
     db: &DatabaseConnection,
 ) -> Result<subscribe_source::Model, AppError> {
@@ -184,6 +189,42 @@ pub async fn update_one_confluence(
     Ok(Json(confluence_dto))
 }
 
+pub async fn update_one_confluence_cron(
+    State(state): State<Arc<AppState>>,
+    Extension(current_user): Extension<CurrentUser>,
+    Path(id): Path<i32>,
+    Json(confluence_update_cron_dto): Json<ConfluenceUpdateCronDto>,
+) -> Result<(), AppError> {
+    let db = &state.conn;
+    let cm = find_one_confluence_in_db(db, id, &current_user).await?;
+    let mut cm = cm.into_active_model();
+
+    let schedule = Schedule::from_str(&confluence_update_cron_dto.cron_expr)
+        .map_err(|e| anyhow::anyhow!(e))?;
+    let tz = confluence_update_cron_dto
+        .cron_expr_tz
+        .parse::<Tz>()
+        .map_err(|_| AppError::BadRequest {
+            message: format!("bad timezone {}", &confluence_update_cron_dto.cron_expr_tz),
+        })?;
+
+    if let Some(next_time) = schedule.upcoming(tz).take(1).next() {
+        cm.cron_expr = Set(Some(confluence_update_cron_dto.cron_expr));
+        cm.cron_expr_tz = Set(Some(confluence_update_cron_dto.cron_expr_tz));
+        cm.cron_next_at = Set(Some(
+            DateTime::from_timestamp_millis(next_time.timestamp_millis())
+                .ok_or_else(|| anyhow::anyhow!("failed to get next upcoming time"))?,
+        ));
+        cm.cron_prev_at = Set(None);
+        cm.cron_err = Set(None);
+    } else {
+        return Err(anyhow::anyhow!("failed to get next upcoming time").into());
+    }
+
+    cm.update(db).await?;
+    Ok(())
+}
+
 pub async fn sync_one_confluence(
     Path(id): Path<i32>,
     State(state): State<Arc<AppState>>,
@@ -206,6 +247,66 @@ pub async fn sync_one_confluence(
     Ok(Json(confluence_dto))
 }
 
+pub async fn mux_one_confluence_impl(
+    db: &DatabaseConnection,
+    cm: confluence::Model,
+    sms: Vec<subscribe_source::Model>,
+    pms: Vec<profile::Model>,
+) -> Result<
+    (
+        confluence::Model,
+        Vec<subscribe_source::Model>,
+        Vec<profile::Model>,
+    ),
+    AppError,
+> {
+    let template = serde_yaml::from_str::<ClashConfig>(&cm.template).map_err(ConfigError::from)?;
+    let mut sources = vec![];
+    let mut sub_upload: Option<i64> = None;
+    let mut sub_download: Option<i64> = None;
+    let mut sub_expire: Option<DateTime> = None;
+    let mut sub_total: Option<i64> = None;
+    for sm in &sms {
+        let source = &sm.content as &str;
+        let name = &sm.name as &str;
+        let config: ClashConfig = serde_yaml::from_str(source).map_err(ConfigError::from)?;
+        sub_upload = match (sub_upload, sm.sub_upload) {
+            (None, None) => None,
+            (acc, curr) => Some(acc.unwrap_or_default() + curr.unwrap_or_default()),
+        };
+        sub_download = match (sub_download, sm.sub_download) {
+            (None, None) => None,
+            (acc, curr) => Some(acc.unwrap_or_default() + curr.unwrap_or_default()),
+        };
+        sub_total = match (sub_total, sm.sub_total) {
+            (None, None) => None,
+            (acc, curr) => Some(acc.unwrap_or_default() + curr.unwrap_or_default()),
+        };
+        sub_expire = match (sub_expire, sm.sub_expire) {
+            (None, curr) => curr,
+            (last_min, None) => last_min,
+            (Some(last_min), Some(curr)) => {
+                if last_min < curr {
+                    Some(last_min)
+                } else {
+                    Some(curr)
+                }
+            }
+        };
+        sources.push((name, config));
+    }
+    let mux_config = mux_configs(&template, &sources)?;
+    let mux_content = serde_yaml::to_string(&mux_config).map_err(ConfigError::from)?;
+    let mut cm = cm.into_active_model();
+    cm.mux_content = Set(mux_content);
+    cm.sub_download = Set(sub_upload);
+    cm.sub_expire = Set(sub_expire);
+    cm.sub_total = Set(sub_total);
+    cm.sub_upload = Set(sub_download);
+    let cm = cm.update(db).await?;
+    Ok((cm, sms, pms))
+}
+
 pub async fn mux_one_confluence(
     Path(id): Path<i32>,
     State(state): State<Arc<AppState>>,
@@ -217,53 +318,7 @@ pub async fn mux_one_confluence(
 
     let (pms, sms) = find_certain_confluence_profiles_and_subscribe_sources(db, id).await?;
 
-    let cm = {
-        let template =
-            serde_yaml::from_str::<ClashConfig>(&cm.template).map_err(ConfigError::from)?;
-        let mut sources = vec![];
-        let mut sub_upload: Option<i64> = None;
-        let mut sub_download: Option<i64> = None;
-        let mut sub_expire: Option<DateTime> = None;
-        let mut sub_total: Option<i64> = None;
-        for sm in &sms {
-            let source = &sm.content as &str;
-            let name = &sm.name as &str;
-            let config: ClashConfig = serde_yaml::from_str(source).map_err(ConfigError::from)?;
-            sub_upload = match (sub_upload, sm.sub_upload) {
-                (None, None) => None,
-                (acc, curr) => Some(acc.unwrap_or_default() + curr.unwrap_or_default()),
-            };
-            sub_download = match (sub_download, sm.sub_download) {
-                (None, None) => None,
-                (acc, curr) => Some(acc.unwrap_or_default() + curr.unwrap_or_default()),
-            };
-            sub_total = match (sub_total, sm.sub_total) {
-                (None, None) => None,
-                (acc, curr) => Some(acc.unwrap_or_default() + curr.unwrap_or_default()),
-            };
-            sub_expire = match (sub_expire, sm.sub_expire) {
-                (None, curr) => curr,
-                (last_min, None) => last_min,
-                (Some(last_min), Some(curr)) => {
-                    if last_min < curr {
-                        Some(last_min)
-                    } else {
-                        Some(curr)
-                    }
-                }
-            };
-            sources.push((name, config));
-        }
-        let mux_config = mux_configs(&template, &sources)?;
-        let mux_content = serde_yaml::to_string(&mux_config).map_err(ConfigError::from)?;
-        let mut cm = cm.into_active_model();
-        cm.mux_content = Set(mux_content);
-        cm.sub_download = Set(sub_upload);
-        cm.sub_expire = Set(sub_expire);
-        cm.sub_total = Set(sub_total);
-        cm.sub_upload = Set(sub_download);
-        cm.update(db).await
-    }?;
+    let (cm, sms, pms) = mux_one_confluence_impl(db, cm, sms, pms).await?;
 
     let confluence_dto = ConfluenceDto::from_orm(cm, sms, pms);
 

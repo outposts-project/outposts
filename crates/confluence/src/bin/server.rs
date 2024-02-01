@@ -4,35 +4,35 @@ use axum::{
     handler::HandlerWithoutStateExt, http::Method, http::StatusCode, middleware, routing::delete,
     routing::get, routing::post, routing::put, Router,
 };
-use confluence::services::{
-    create_one_confluence, create_one_profile, create_one_subscribe_source, delete_one_confluence,
-    delete_one_profile, delete_one_subscribe_source, find_many_confluences, find_one_confluence,
-    find_one_profile_as_subscription_by_token, mux_one_confluence, sync_one_confluence,
-    sync_one_subscribe_source, update_one_confluence, update_one_subscribe_source, AppState,
-};
 use confluence::auth::auth;
 use confluence::config::{AppConfig, AuthConfig};
 use confluence::error::AppError;
 use confluence::migrations;
+use confluence::services::{
+    create_one_confluence, create_one_profile, create_one_subscribe_source, delete_one_confluence,
+    delete_one_profile, delete_one_subscribe_source, find_many_confluences, find_one_confluence,
+    find_one_profile_as_subscription_by_token, mux_one_confluence, sync_one_confluence,
+    sync_one_subscribe_source, update_one_confluence, update_one_confluence_cron,
+    update_one_subscribe_source, AppState,
+};
+use confluence::tasks::init_backend_jobs;
 use sea_orm::{ConnectOptions, Database};
 use sea_orm_migration::MigratorTrait;
 use std::env;
 use std::net::IpAddr;
 use std::net::SocketAddr;
 use std::sync::Arc;
+use tokio_cron_scheduler::JobScheduler;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::EnvFilter;
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
 async fn main() -> Result<(), AppError> {
-    tracing_subscriber::registry()
-        .with(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| EnvFilter::new("info")),
+    tracing_subscriber::fmt::fmt()
+        .with_env_filter(
+            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),
         )
-        .with(tracing_subscriber::fmt::layer())
         .init();
 
     dotenvy::dotenv().ok();
@@ -90,6 +90,14 @@ async fn main() -> Result<(), AppError> {
         },
     ));
 
+    let mut job_scheduler = JobScheduler::new()
+        .await
+        .expect("failed to create backend task scheduler");
+
+    init_backend_jobs(&mut job_scheduler, state.clone())
+        .await
+        .unwrap();
+
     tokio::join!(serve(handle_confluence(state.clone()), state));
     Ok(())
 }
@@ -109,6 +117,7 @@ fn handle_confluence(state: Arc<AppState>) -> Router {
         )
         .route("/mux/:id", post(mux_one_confluence))
         .route("/sync/:id", post(sync_one_confluence))
+        .route("/cron/:id", post(update_one_confluence_cron))
         .layer(middleware::from_fn_with_state(state.clone(), auth));
 
     let profile_api = Router::<Arc<AppState>>::new()

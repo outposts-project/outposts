@@ -21,6 +21,14 @@ pub struct Model {
     pub sub_download: Option<i64>,
     pub sub_total: Option<i64>,
     pub sub_expire: Option<DateTime>,
+    pub cron_expr: Option<String>,
+    pub cron_expr_tz: Option<String>,
+    #[sea_orm(column_type = "Timestamp")]
+    pub cron_prev_at: Option<DateTime>,
+    #[sea_orm(column_type = "Text")]
+    pub cron_err: Option<String>,
+    #[sea_orm(column_type = "Timestamp")]
+    pub cron_next_at: Option<DateTime>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

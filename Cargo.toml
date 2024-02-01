@@ -1,8 +1,6 @@
 [workspace]
 members = ["crates/confluence"]
 resolver = "2"
-
-[profile.release]
 # lto = true
 
 # We use CARGO_PROFILE_RELEASE_LTO for production builds

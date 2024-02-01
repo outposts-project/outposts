@@ -88,6 +88,13 @@ pub struct ConfluenceDto {
     pub sub_total: Option<i64>,
     #[ts(type = "number", optional)]
     pub sub_expire: Option<i64>,
+    pub cron_expr: Option<String>,
+    pub cron_expr_tz: Option<String>,
+    #[ts(type = "number", optional)]
+    pub cron_prev_at: Option<i64>,
+    pub cron_err: Option<String>,
+    #[ts(type = "number", optional)]
+    pub cron_next_at: Option<i64>,
 }
 
 impl ConfluenceDto {
@@ -110,6 +117,11 @@ impl ConfluenceDto {
             sub_expire: confluence.sub_expire.map(|s| s.timestamp_millis()),
             sub_total: confluence.sub_total,
             sub_upload: confluence.sub_upload,
+            cron_expr: confluence.cron_expr,
+            cron_expr_tz: confluence.cron_expr_tz,
+            cron_prev_at: confluence.cron_prev_at.map(|s| s.timestamp_millis()),
+            cron_err: confluence.cron_err,
+            cron_next_at: confluence.cron_next_at.map(|s| s.timestamp_millis()),
         }
     }
 }
@@ -140,4 +152,11 @@ pub struct SubscribeSourceUpdateDto {
 #[ts(export)]
 pub struct ConfluenceUpdateDto {
     pub template: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
+#[ts(export)]
+pub struct ConfluenceUpdateCronDto {
+    pub cron_expr: String,
+    pub cron_expr_tz: String,
 }

@@ -4,6 +4,7 @@ mod defs;
 mod m20220101_000001_create_table;
 mod m20240130_083647_subscribe_source_add_details;
 mod m20240130_131930_add_updated_at_triggers;
+mod m20240201_061359_cron_confluence_sync_and_mux;
 
 pub struct Migrator;
 
@@ -14,6 +15,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20220101_000001_create_table::Migration),
             Box::new(m20240130_083647_subscribe_source_add_details::Migration),
             Box::new(m20240130_131930_add_updated_at_triggers::Migration),
+            Box::new(m20240201_061359_cron_confluence_sync_and_mux::Migration),
         ]
     }
 }

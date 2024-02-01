@@ -26,6 +26,7 @@
     "@angular/platform-browser": "^17.0.0",
     "@angular/platform-browser-dynamic": "^17.0.0",
     "@angular/router": "^17.0.0",
+    "@datasert/cronjs-parser": "^1.4.0",
     "@logto/browser": "^2.1.2",
     "@logto/client": "^2.2.4",
     "@logto/js": "^2.1.3",
