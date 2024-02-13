@@ -21,7 +21,7 @@ services:
       - ./postgres/data:/var/lib/postgresql/data
       - ./postgres/init.sh:/docker-entrypoint-initdb.d/init.sh
     ports:
-      - 5432:5432
+      - 9005:5432
     networks:
       - outposts
     healthcheck:
