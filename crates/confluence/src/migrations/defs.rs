@@ -20,6 +20,7 @@ pub enum Confluence {
     CronPrevAt,
     CronErr,
     CronNextAt,
+    UserAgent,
 }
 
 #[derive(DeriveIden)]

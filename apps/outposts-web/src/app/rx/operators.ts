@@ -5,7 +5,7 @@ import {
   throwError,
   finalize,
   Observable,
-  Subject,
+  Subject, take
 } from 'rxjs';
 
 export function withSuspense<T, E = any>(
@@ -13,15 +13,26 @@ export function withSuspense<T, E = any>(
   {
     loading$$,
     error$$,
+    takeFirst = true
   }: {
     loading$$?: Subject<boolean>;
     error$$?: Subject<E>;
+    takeFirst?: boolean
   } = {}
 ): Observable<T> {
   if (loading$$) {
     loading$$.next(true);
   }
-  return source$.pipe(
+
+  let ob$ = source$;
+
+  if (takeFirst) {
+    ob$ = ob$.pipe(
+      take(1)
+    );
+  }
+
+  return ob$.pipe(
     catchError((err) => {
       if (error$$) {
         error$$.next(err);

@@ -29,6 +29,18 @@ pub struct Model {
     pub cron_err: Option<String>,
     #[sea_orm(column_type = "Timestamp")]
     pub cron_next_at: Option<DateTime>,
+    #[sea_orm(column_type = "Text")]
+    pub user_agent: String,
+}
+
+impl Model {
+    pub fn user_agent_or_default (&self) -> &str {
+        if self.user_agent.is_empty() {
+            "ClashforWindows/0.20.39"
+        } else {
+            &self.user_agent
+        }
+    }
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

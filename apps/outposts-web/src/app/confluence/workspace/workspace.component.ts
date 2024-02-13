@@ -12,7 +12,6 @@ import {
   combineLatestWith,
   shareReplay,
   tap,
-  delayWhen,
 } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -271,6 +270,40 @@ import { hourPlusLevelCronExprValidator } from '../validators/cron-expr.validato
             </small>
           </form>
         </div>
+        <div
+          class="flex justify-content-between align-items-center surface-border border-y-1 mt-4 mb-4 p-3 font-bold"
+          style="background: #f9fafb;"
+        >
+          <div class="text-xl">Sync User-Agent</div>
+          <div class="flex gap-2">
+            <p-button
+              label="Save"
+              icon="pi pi-check"
+              (click)="saveUA()"
+              [outlined]="true"
+            ></p-button>
+          </div>
+        </div>
+        <div class="m-0">
+          <form
+            [formGroup]="uaUpdateForm"
+            class="w-full flex flex-column"
+            onsubmit="return false;"
+          >
+            <input
+              [ngClass]="{
+                'ng-invalid': uaUpdateForm.controls.userAgent.invalid,
+                'ng-dirty': uaUpdateForm.controls.userAgent.touched
+              }"
+              type="text"
+              id="ua-update-user-agent"
+              pInputText
+              formControlName="userAgent"
+              autocomplete="off"
+              placeholder="ClashforWindows/0.20.39"
+            />
+          </form>
+        </div>
       </p-fieldset>
     </div>
     @if (subscribeSourceCreation) {
@@ -517,6 +550,9 @@ export class WorkspaceComponent implements OnInit {
   cronUpdateForm = this.fb.group({
     cronExpr: this.fb.control('', [hourPlusLevelCronExprValidator]),
   });
+  uaUpdateForm = this.fb.group({
+    userAgent: this.fb.control('', []),
+  });
 
   ngOnInit() {
     this.confluenceId$
@@ -564,6 +600,19 @@ export class WorkspaceComponent implements OnInit {
       .subscribe((expr) => {
         this.cronUpdateForm.patchValue({
           cronExpr: expr,
+        });
+      });
+
+    this.confluence$
+      .pipe(
+        map((c) => c?.user_agent ?? ''),
+        distinctUntilChanged(),
+        filter((v) => v !== this.uaUpdateForm.value.userAgent),
+        takeUntilDestroyed(this.destoryRef)
+      )
+      .subscribe((ua) => {
+        this.uaUpdateForm.patchValue({
+          userAgent: ua,
         });
       });
   }
@@ -739,13 +788,14 @@ export class WorkspaceComponent implements OnInit {
           takeUntilDestroyed(this.destoryRef)
         )
       )
-      .subscribe(() =>
+      .subscribe((c) => {
+        this.confluence$.next(c);
         this.overlayService.toast({
           severity: 'success',
           summary: 'Success',
           detail: 'Sync successfully',
-        })
-      );
+        });
+      });
   }
 
   openPreviewSubscribeSourceContentDialog(item: SubscribeSourceDto) {
@@ -852,6 +902,37 @@ export class WorkspaceComponent implements OnInit {
               .pipe(map(() => id))
           ),
           switchMap((id) => this.confluenceService.getConfluenceById(id)),
+          takeUntilDestroyed(this.destoryRef)
+        )
+      )
+      .subscribe((c) => {
+        this.confluence$.next(c);
+        this.overlayService.toast({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Saved successfully',
+        });
+      });
+  }
+
+  saveUA() {
+    const form = this.uaUpdateForm;
+    form.markAllAsTouched();
+    if (!form.valid) {
+      return;
+    }
+    this.overlayService
+      .withSuspense(
+        this.confluenceId$.pipe(
+          take(1),
+          switchMap((id) =>
+            this.confluenceService.updateConfluence(id, {
+              user_agent: form.value.userAgent as Exclude<
+                typeof form.value.userAgent,
+                null | undefined
+              >,
+            })
+          ),
           takeUntilDestroyed(this.destoryRef)
         )
       )

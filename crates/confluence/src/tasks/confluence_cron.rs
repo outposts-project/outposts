@@ -25,9 +25,11 @@ impl ConfluenceCronTask {
         let db = &self.state.conn;
         let (pms, sms) = find_certain_confluence_profiles_and_subscribe_sources(db, cm.id).await?;
 
+        let ua = cm.user_agent_or_default();
+
         let sms = try_join_all(
             sms.into_iter()
-                .map(async move |sm| sync_one_subscribe_source_with_url(sm, db).await),
+                .map(async move |sm| sync_one_subscribe_source_with_url(sm, ua, db).await),
         )
         .await?;
 

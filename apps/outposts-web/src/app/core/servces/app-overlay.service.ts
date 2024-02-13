@@ -1,6 +1,6 @@
 import { MessageService, type Message } from 'primeng/api';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
-import { withSuspense } from '../../rx';
+import { withSuspense } from '@app/rx';
 import { DestroyRef, Injectable, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 

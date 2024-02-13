@@ -80,9 +80,13 @@ pub async fn find_certain_confluence_profiles_and_subscribe_sources(
 
 pub async fn sync_one_subscribe_source_with_url(
     sm: subscribe_source::Model,
+    ua: &str,
     db: &DatabaseConnection,
 ) -> Result<subscribe_source::Model, AppError> {
-    let res = reqwest::get(&sm.url).await?;
+    let client = reqwest::ClientBuilder::new()
+        .user_agent(ua)
+        .build()?;
+    let res = client.get(&sm.url).send().await?;
     let mut sm = sm.into_active_model();
     if let Some(sub_userinfo) = parse_subscription_userinfo_in_header(res.headers()) {
         if let Some(v) = sub_userinfo.get(SUB_DOWNLOAD) {
@@ -178,7 +182,12 @@ pub async fn update_one_confluence(
     let db = &state.conn;
     let cm = find_one_confluence_in_db(db, id, &current_user).await?;
     let mut cm = cm.into_active_model();
-    cm.template = Set(confluence_update_dto.template);
+    if let Some(template) = confluence_update_dto.template {
+        cm.template = Set(template);
+    }
+    if let Some(user_agent) = confluence_update_dto.user_agent {
+        cm.user_agent = Set(user_agent);
+    }
     cm = cm.save(db).await?;
     let cm = cm.try_into_model()?;
 
@@ -234,11 +243,13 @@ pub async fn sync_one_confluence(
 
     let cm = find_one_confluence_in_db(db, id, &current_user).await?;
 
+    let ua = cm.user_agent_or_default();
+
     let (pms, sms) = find_certain_confluence_profiles_and_subscribe_sources(db, id).await?;
 
     let sms = try_join_all(
         sms.into_iter()
-            .map(async move |sm| sync_one_subscribe_source_with_url(sm, db).await),
+            .map(async move |sm| sync_one_subscribe_source_with_url(sm, ua, db).await),
     )
     .await?;
 
@@ -506,29 +517,6 @@ pub async fn delete_one_subscribe_source(
     if let Some(pm) = pm.pop() {
         let pam = pm.0.into_active_model();
         pam.delete(db).await?;
-        Ok(())
-    } else {
-        Err(AppError::DbNotFound(format!(
-            "cannot find subscribe source id = {}",
-            id
-        )))
-    }
-}
-
-pub async fn sync_one_subscribe_source(
-    State(state): State<Arc<AppState>>,
-    Extension(current_user): Extension<CurrentUser>,
-    Path(id): Path<i32>,
-) -> Result<(), AppError> {
-    let db = &state.conn;
-    let mut pm = subscribe_source::Entity::find_by_id(id)
-        .find_with_related(confluence::Entity)
-        .filter(confluence::Column::Creator.eq(&current_user.user_id))
-        .limit(1)
-        .all(db)
-        .await?;
-    if let Some((sm, _)) = pm.pop() {
-        sync_one_subscribe_source_with_url(sm, db).await?;
         Ok(())
     } else {
         Err(AppError::DbNotFound(format!(

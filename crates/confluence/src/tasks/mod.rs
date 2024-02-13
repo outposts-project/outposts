@@ -17,11 +17,11 @@ pub async fn init_backend_jobs(
             move |_uuid, _l| {
                 let task = Arc::clone(&confluence_cron_task);
                 Box::pin(async move {
-                    tracing::info!("confluence cron task start running...");
+                    tracing::debug!("confluence cron task start running...");
                     if let Err(err) = task.run().await {
                         tracing::error!("confluence cron task run error: {}", err.to_string());
                     } else {
-                        tracing::info!("confluence cron task succeed to run");
+                        tracing::debug!("confluence cron task succeed to run");
                     }
                 })
             },
