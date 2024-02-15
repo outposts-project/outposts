@@ -17,4 +17,7 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             cd /workspace/outposts
-            docker-compose up -d -f docker-compose.cd.yaml --build
+            git reset --hard HEAD
+            git pull origin main
+            cp -f docker-compose.cd.yaml docker-compose.yaml
+            docker compose up -d --build
