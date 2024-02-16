@@ -7,6 +7,7 @@ import {
   TargetOptions,
 } from '@angular-builders/custom-webpack';
 import * as webpack from 'webpack';
+import fs from 'fs';
 
 dotenv.config();
 dotenv.config({
@@ -26,6 +27,11 @@ function debugConfig(config: webpack.Configuration) {
     )
   );
 }
+
+console.log(
+  'check env file exists',
+  fs.existsSync(path.resolve(__dirname, '../../.env'))
+);
 
 if (
   !process.env['AUTH_TYPE'] ||
