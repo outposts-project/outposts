@@ -59,8 +59,8 @@ jobs:
           file: 'apps/outposts-web/Dockerfile'
           push: true
           tags: 'ghcr.io/${{ env.ORG }}/outposts-web:latest'
-          secrets: |
-            "AUTH_ENDPOINT=${{ secrets.AUTH_ENDPOINT }}"
-            "AUTH_TYPE=${{ secrets.AUTH_TYPE }}"
-            "OUTPOSTS_WEB_AUTH_APPID=${{ secrets.OUTPOSTS_WEB_AUTH_APPID }}"
-            "CONFLUENCE_API_ENDPOINT=${{ secrets.CONFLUENCE_API_ENDPOINT }}"
+          secret-envs: |
+            "AUTH_ENDPOINT=${{ vars.AUTH_ENDPOINT }}"
+            "AUTH_TYPE=${{ vars.AUTH_TYPE }}"
+            "OUTPOSTS_WEB_AUTH_APPID=${{ vars.OUTPOSTS_WEB_AUTH_APPID }}"
+            "CONFLUENCE_API_ENDPOINT=${{ vars.CONFLUENCE_API_ENDPOINT }}"
