@@ -46,6 +46,17 @@ jobs:
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+      - name: Create dotenv
+        uses: iamsauravsharma/create-dotenv@v2.0.1
+        env:
+          AUTH_ENDPOINT: ${{ vars.AUTH_ENDPOINT }}
+          AUTH_TYPE: ${{ vars.AUTH_TYPE }}
+          OUTPOSTS_WEB_AUTH_APPID: ${{ vars.OUTPOSTS_WEB_AUTH_APPID }}
+          CONFLUENCE_API_ENDPOINT: ${{ vars.CONFLUENCE_API_ENDPOINT }}
+        with:
+          input-prefix: '' # Optional (default: '')
+          file-path: .env' # Optional (default : '.env')
+          output-prefix: '' # Optional (default: '')
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -59,8 +70,3 @@ jobs:
           file: 'apps/outposts-web/Dockerfile'
           push: true
           tags: 'ghcr.io/${{ env.ORG }}/outposts-web:latest'
-          secret-envs: |
-            "AUTH_ENDPOINT=${{ vars.AUTH_ENDPOINT }}"
-            "AUTH_TYPE=${{ vars.AUTH_TYPE }}"
-            "OUTPOSTS_WEB_AUTH_APPID=${{ vars.OUTPOSTS_WEB_AUTH_APPID }}"
-            "CONFLUENCE_API_ENDPOINT=${{ vars.CONFLUENCE_API_ENDPOINT }}"
