@@ -32,6 +32,8 @@ jobs:
           file: 'crates/confluence/Dockerfile'
           push: true
           tags: 'ghcr.io/${{ env.ORG }}/confluence:latest'
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
   build-web:
     name: Build Outposts Web
     runs-on: ubuntu-latest
@@ -70,3 +72,5 @@ jobs:
           file: 'apps/outposts-web/Dockerfile'
           push: true
           tags: 'ghcr.io/${{ env.ORG }}/outposts-web:latest'
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
