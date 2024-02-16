@@ -1,21 +1,38 @@
-import {DefinePlugin} from 'webpack';
+import { DefinePlugin } from 'webpack';
 import dotenv from 'dotenv';
-import path from "path";
-import {version} from './package.json';
-import {CustomWebpackBrowserSchema, TargetOptions} from "@angular-builders/custom-webpack";
+import path from 'path';
+import { version } from './package.json';
+import {
+  CustomWebpackBrowserSchema,
+  TargetOptions,
+} from '@angular-builders/custom-webpack';
 import * as webpack from 'webpack';
 
 dotenv.config();
 dotenv.config({
-  path: path.resolve(__dirname, '../../.env')
+  path: path.resolve(__dirname, '../../.env'),
 });
 
 // Export a configuration object
 // See [Webpack's documentation](https://webpack.js.org/configuration/) for additional ideas of how to
 // customize your build beyond what Angular provides.
 
-function debugConfig (config: webpack.Configuration) {
-  console.log(JSON.stringify(config, (_, value) => value instanceof RegExp ? value.toString() : value, 2));
+function debugConfig(config: webpack.Configuration) {
+  console.log(
+    JSON.stringify(
+      config,
+      (_, value) => (value instanceof RegExp ? value.toString() : value),
+      2
+    )
+  );
+}
+
+if (
+  !process.env['AUTH_TYPE'] ||
+  !process.env['CONFLUENCE_API_ENDPOINT'] ||
+  !process.env['AUTH_ENDPOINT']
+) {
+  throw 'missing required envs';
 }
 
 export default (
@@ -28,32 +45,38 @@ export default (
     new DefinePlugin({
       'process.env.AUTH_TYPE': JSON.stringify(process.env['AUTH_TYPE']),
       'process.env.AUTH_ENDPOINT': JSON.stringify(process.env['AUTH_ENDPOINT']),
-      'process.env.OUTPOSTS_WEB_AUTH_APPID': JSON.stringify(process.env['OUTPOSTS_WEB_AUTH_APPID']),
+      'process.env.OUTPOSTS_WEB_AUTH_APPID': JSON.stringify(
+        process.env['OUTPOSTS_WEB_AUTH_APPID']
+      ),
       'process.env.APP_VERSION': JSON.stringify(version),
-      'process.env.CONFLUENCE_API_ENDPOINT': JSON.stringify(process.env['CONFLUENCE_API_ENDPOINT'])
+      'process.env.CONFLUENCE_API_ENDPOINT': JSON.stringify(
+        process.env['CONFLUENCE_API_ENDPOINT']
+      ),
     })
   );
   config.plugins = plugins;
 
   const rules = config.module?.rules || [];
 
-  rules.forEach(r => {
+  rules.forEach((r) => {
     if (typeof r === 'object' && r && r.test instanceof RegExp) {
       const test = r.test;
-      if(test.source === "\\.[cm]?[tj]sx?$" || test.source === "\\.[cm]?jsx?$" || test.source === "\\.[cm]?tsx?$") {
+      if (
+        test.source === '\\.[cm]?[tj]sx?$' ||
+        test.source === '\\.[cm]?jsx?$' ||
+        test.source === '\\.[cm]?tsx?$'
+      ) {
         r.resourceQuery = {
-          not: [/asset-/]
-        }
+          not: [/asset-/],
+        };
       }
     }
   });
 
-  rules.push(
-    {
-      test: /\.md$/,
-      type: 'asset/source',
-    }
-  )
+  rules.push({
+    test: /\.md$/,
+    type: 'asset/source',
+  });
 
   rules.push(
     {
@@ -62,20 +85,20 @@ export default (
     },
     {
       resourceQuery: /asset-resource/,
-      type: 'asset/resource'
+      type: 'asset/resource',
     },
     {
       resourceQuery: /asset-inline/,
-      type: 'asset/inline'
+      type: 'asset/inline',
     }
   );
 
   config.module = {
     ...config.module,
-    rules
-  }
+    rules,
+  };
 
   // debugConfig(config);
 
   return config;
-}
+};
