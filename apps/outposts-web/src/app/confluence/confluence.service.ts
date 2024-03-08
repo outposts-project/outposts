@@ -8,7 +8,7 @@ import type { SubscribeSourceDto } from './bindings/SubscribeSourceDto';
 import type { SubscribeSourceUpdateDto } from './bindings/SubscribeSourceUpdateDto';
 import { ProfileDto } from './bindings/ProfileDto';
 import { ProfileCreationDto } from './bindings/ProfileCreationDto';
-import { ConfluenceUpdateCronDto } from './bindings/ConfluenceUpdateCronDto';
+import type { ConfluenceUpdateCronDto } from './bindings/ConfluenceUpdateCronDto';
 
 @Injectable()
 export class ConfluenceService {

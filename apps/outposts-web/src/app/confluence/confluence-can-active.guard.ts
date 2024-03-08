@@ -7,7 +7,8 @@ export const canActiveConfluence: CanActivateFn = (...args) => {
   const authService = inject(AuthService);
 
   return authService.canActivate({
-    scopes: [/read:confluence/, /write:confluence/],
-    resources: [environment.CONFLUENCE_API_ENDPOINT],
+    resourceScopesMap: {
+      [environment.CONFLUENCE_API_ENDPOINT]: [/read:confluence/, /write:confluence/]
+    },
   })(...args);
 };

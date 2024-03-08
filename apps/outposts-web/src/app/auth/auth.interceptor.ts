@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, Injector, inject } from '@angular/core';
 import { HttpEvent, HttpInterceptor, HttpHandler, HttpRequest, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { Observable, of, switchMap } from 'rxjs';
 import { AUTH_RESOURCES } from './auth.defs';
@@ -6,12 +6,16 @@ import { AuthService } from './auth.service';
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
-  protected readonly auhService = inject(AuthService);
+  protected injector = inject(Injector);
+
+  get authService (): AuthService {
+    return this.injector.get(AuthService)
+  }
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     return of(AUTH_RESOURCES.find(r => req.url.startsWith(r)))
     .pipe(
-      switchMap((matchResource) => matchResource ? this.auhService.getResourceToken(matchResource) : of(null)),
+      switchMap((matchResource) => matchResource ? this.authService.getResourceClaims([matchResource]) : of(null)),
       switchMap((resourceAccessToken) => {
         let authReq = req;
         if (resourceAccessToken) {

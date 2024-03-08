@@ -1,10 +1,13 @@
 import { NgModule, APP_INITIALIZER } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import { AuthService } from './auth.service';
 import { take } from 'rxjs';
 import { authInterceptor } from './auth.interceptor';
+import { AuthModule as AuthOidcClientModule, StsConfigLoader } from 'angular-auth-oidc-client';
+import { authConfigFactory } from './auth.defs';
 
 @NgModule({
+  exports: [],
   declarations: [],
   providers: [
     AuthService,
@@ -14,7 +17,6 @@ import { authInterceptor } from './auth.interceptor';
       multi: true,
       useFactory: (authService: AuthService) => {
         return () => {
-          authService.isLoading = true;
           return authService.isAuthenticated$.pipe(
             take(1)
           )
@@ -23,6 +25,15 @@ import { authInterceptor } from './auth.interceptor';
       deps: [AuthService],
     }
   ],
-  imports: [CommonModule],
+  imports: [
+    CommonModule,
+    AuthOidcClientModule.forRoot({
+      loader: {
+        provide: StsConfigLoader,
+        useFactory: authConfigFactory,
+        deps: [DOCUMENT]
+      }
+    }),
+  ],
 })
 export class AuthModule {}

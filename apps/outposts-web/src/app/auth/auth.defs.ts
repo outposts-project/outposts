@@ -1,17 +1,16 @@
-import { inject, Injectable } from '@angular/core';
-import { Router } from '@angular/router';
-import { Location } from '@angular/common';
 import { environment } from '@environments/environment';
+import { buildAngularAuthConfig } from '@logto/js';
+import { StsConfigStaticLoader } from 'angular-auth-oidc-client';
 
 export const AUTH_RESOURCES = [environment.CONFLUENCE_API_ENDPOINT];
 export const AUTH_SCOPES = ['read:confluence', 'write:confluence'];
 
-export type UserAuthIdentity = {
+export type AuthStateUserDataIdentity = {
   userId: string;
   details?: Record<string, unknown>;
 };
 
-export type UserAuthState = {
+export type AuthStateUserData = {
   sub: string;
   name?: string | null;
   username?: string | null;
@@ -21,17 +20,23 @@ export type UserAuthState = {
   phone_number?: string | null;
   phone_number_verified?: boolean;
   custom_data?: unknown;
-  identities?: Record<string, UserAuthIdentity>;
+  identities?: Record<string, AuthStateUserDataIdentity>;
 };
+
+export interface AuthState  {
+  isAuthenticated: boolean;
+  userData: AuthStateUserData;
+  accessToken: string;
+  idToken: string;
+  configId?: string;
+  errorMessage?: string;
+}
 
 export interface RedirectSignInOptions {
   signInType: 'redirect';
   redirectUrl: string;
 }
 
-/**
- * @unimplemented
- */
 export interface PopupSignInOptions {
   signInType: 'popup';
 }
@@ -43,51 +48,23 @@ export interface RedirectSignOutOptions {
   redirectUrl: string;
 }
 
-/**
- * @unimplemented
- */
 export interface PopupSignOutOptions {
   signOutType: 'popup';
 }
 
 export type SignOutOptions = RedirectSignOutOptions | PopupSignOutOptions;
 
-/**
- * Angular specific state to be stored before redirect
- */
-export interface AppState {
-  /**
-   * Target path the app gets routed to after
-   * handling the callback from Auth0 (defaults to '/')
-   */
-  target?: string;
-
-  /**
-   * Any custom parameter to be stored in appState
-   */
-  [key: string]: any;
+export function buildRedirectUrl (document: Document, redirectUrlToBase: string): string {
+  return `${document.baseURI.replace(/\/$/, '')}${redirectUrlToBase}`
 }
 
-@Injectable({
-  providedIn: 'root',
-})
-export class AbstractNavigator {
-  private readonly location = inject(Location);
-  private readonly router = inject(Router);
-
-  /**
-   * Navigates to the specified url. The router will be used if one is available, otherwise it falls back
-   * to `window.history.replaceState`.
-   *
-   * @param url The url to navigate to
-   */
-  navigateByUrl(url: string): void {
-    if (this.router) {
-      this.router.navigateByUrl(url);
-
-      return;
-    }
-
-    this.location.replaceState(url);
-  }
+export function authConfigFactory (document: Document) {
+  const authConfig = buildAngularAuthConfig({
+    endpoint: environment.AUTH_ENDPOINT,
+    appId: environment.AUTH_APPID,
+    redirectUri: buildRedirectUrl(document, '/'),
+    scopes: AUTH_SCOPES
+  });
+  console.debug('auth-config:', authConfig);
+  return new StsConfigStaticLoader(authConfig)
 }
