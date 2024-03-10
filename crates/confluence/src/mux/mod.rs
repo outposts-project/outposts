@@ -1,7 +1,7 @@
-use crate::clash::{ClashConfig, Proxy, ProxyGroup, ProxyGroupKind, Rule};
-use crate::error::ConfigError;
-use addr::parse_domain_name;
 use std::collections::{HashMap, HashSet};
+
+use crate::clash::{ClashConfig, Proxy, ProxyGroup, ProxyGroupKind, Rule};
+use crate::clash::utils::{parse_server_tld, ServerTld};
 
 const PROXY_SLOT: &str = "<mux>";
 
@@ -13,7 +13,7 @@ pub fn mux_configs(
     let rules = &template.rules;
     let proxy_groups = &template.proxy_groups;
     let mut name_to_proxies_map = HashMap::<&str, Vec<Proxy>>::new();
-    let mut proxy_servers = HashSet::<&str>::new();
+    let mut proxy_servers = HashSet::<ServerTld<'_>>::new();
 
     let mut mux_proxies = vec![];
     let mut mux_proxy_groups = vec![];
@@ -23,20 +23,8 @@ pub fn mux_configs(
         for p in &config.proxies {
             {
                 // resolve proxy server root domain
-                let proxy_server =
-                    parse_domain_name(&p.server).map_err(|e| ConfigError::ProxyServerInvalid {
-                        config_name: name.to_string(),
-                        server: p.server.to_string(),
-                        source_kind: e.kind(),
-                    })?;
                 let proxy_server_root =
-                    proxy_server
-                        .root()
-                        .ok_or_else(|| ConfigError::ProxyServerInvalid {
-                            config_name: name.to_string(),
-                            server: p.server.to_string(),
-                            source_kind: addr::error::Kind::EmptyName,
-                        })?;
+                    parse_server_tld(&name, &p.server)?;
                 proxy_servers.insert(proxy_server_root);
             }
 
@@ -81,7 +69,18 @@ pub fn mux_configs(
         mux_rules.extend(
             proxy_servers
                 .into_iter()
-                .map(|s| Rule(format!("DOMAIN-SUFFIX,{},DIRECT", s))),
+                .map(|s| Rule({
+                    match s {
+                        ServerTld::Tld(domain) => format!("DOMAIN-SUFFIX,{},DIRECT", domain),
+                        ServerTld::Ip(ip) => {
+                            if ip.is_ipv6() {
+                                format!("IP-CIDR6,{}/32,DIRECT", ip.to_string())
+                            } else {
+                                format!("IP-CIDR,{}/128,DIRECT", ip.to_string())
+                            }
+                        }
+                    }
+                })),
         );
         mux_rules.extend_from_slice(rules);
     }

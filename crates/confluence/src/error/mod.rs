@@ -3,6 +3,7 @@ use axum::response::{IntoResponse, Response};
 use reqwest::Error as FetchError;
 use sea_orm::DbErr;
 use std::fmt::Debug;
+use std::net::AddrParseError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -12,6 +13,12 @@ pub enum ConfigError {
         config_name: String,
         server: String,
         source_kind: addr::error::Kind,
+    },
+    #[error("invalid server format {server} from source config {config_name}, caused by {source:?}")]
+    ProxyServerIpInvalid {
+        config_name: String,
+        server: String,
+        source: AddrParseError
     },
     #[error(transparent)]
     Format(#[from] serde_yaml::Error),

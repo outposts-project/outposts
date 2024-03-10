@@ -99,8 +99,8 @@ pub async fn sync_one_subscribe_source_with_url(
             sm.sub_total = Set(Some(*v));
         };
         if let Some(v) = sub_userinfo.get(SUB_EXPIRE) {
-            if let Some(ts) = DateTime::from_timestamp_opt(*v, 0) {
-                sm.sub_expire = Set(Some(ts));
+            if let Some(ts) = chrono::DateTime::from_timestamp(*v, 0) {
+                sm.sub_expire = Set(Some(ts.naive_utc()));
             }
         };
     };
@@ -221,7 +221,8 @@ pub async fn update_one_confluence_cron(
         cm.cron_expr = Set(Some(confluence_update_cron_dto.cron_expr));
         cm.cron_expr_tz = Set(Some(confluence_update_cron_dto.cron_expr_tz));
         cm.cron_next_at = Set(Some(
-            DateTime::from_timestamp_millis(next_time.timestamp_millis())
+            chrono::DateTime::from_timestamp_millis(next_time.timestamp_millis())
+                .map(|d| d.naive_utc())
                 .ok_or_else(|| anyhow::anyhow!("failed to get next upcoming time"))?,
         ));
         cm.cron_prev_at = Set(None);
@@ -249,7 +250,7 @@ pub async fn sync_one_confluence(
 
     let sms = try_join_all(
         sms.into_iter()
-            .map(async move |sm| sync_one_subscribe_source_with_url(sm, ua, db).await),
+            .map(|sm| sync_one_subscribe_source_with_url(sm, ua, db)),
     )
     .await?;
 
@@ -373,7 +374,7 @@ pub async fn find_one_profile_as_subscription_by_token(
             HeaderValue::from_static("attachment; filename=Confluence.yaml"),
         );
         let sub_expr_to_part = |a: DateTime| {
-            let ts = a.timestamp();
+            let ts = a.and_utc().timestamp();
             format!("{SUB_EXPIRE}={ts}")
         };
         match [

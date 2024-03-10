@@ -1,4 +1,5 @@
 pub mod http;
+pub mod utils;
 
 pub use http::parse_subscription_userinfo_in_header;
 use serde::{Deserialize, Serialize};
