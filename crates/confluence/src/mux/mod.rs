@@ -74,9 +74,9 @@ pub fn mux_configs(
                         ServerTld::Tld(domain) => format!("DOMAIN-SUFFIX,{},DIRECT", domain),
                         ServerTld::Ip(ip) => {
                             if ip.is_ipv6() {
-                                format!("IP-CIDR6,{}/32,DIRECT", ip.to_string())
+                                format!("IP-CIDR6,{}/128,DIRECT", ip.to_string())
                             } else {
-                                format!("IP-CIDR,{}/128,DIRECT", ip.to_string())
+                                format!("IP-CIDR,{}/32,DIRECT", ip.to_string())
                             }
                         }
                     }
