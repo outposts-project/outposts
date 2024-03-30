@@ -7,15 +7,47 @@ use serde_yaml::Value;
 use std::collections::HashMap;
 use monostate::MustBe;
 
+pub fn hysteria_v2_flatten_deserialize_with<'de, D>(deserializer: D) -> Result<HashMap<String, Value>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let mut map: HashMap<String, Value> = HashMap::deserialize(deserializer)?;
+    match (map.contains_key("password"), map.contains_key("auth")) {
+        (true, false) => {
+            map.insert("auth".to_string(), map.get("password").unwrap().clone());
+        },
+        (false, true) => {
+            map.insert("password".to_string(), map.get("auth").unwrap().clone());
+        },
+        _ => {}
+    }
+    Ok(map)
+}
+
+pub fn hysteria_v1_flatten_deserialize_with<'de, D>(deserializer: D) -> Result<HashMap<String, Value>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let mut map: HashMap<String, Value> = HashMap::deserialize(deserializer)?;
+    match (map.contains_key("auth-str"), map.contains_key("auth_str")) {
+        (true, false) => {
+            map.insert("auth_str".to_string(), map.get("auth-str").unwrap().clone());
+        },
+        (false, true) => {
+            map.insert("auth-str".to_string(), map.get("auth_str").unwrap().clone());
+        },
+        _ => {}
+    }
+    Ok(map)
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct HysteriaV1Proxy {
     #[serde(rename = "type")]
     pub kind: MustBe!("hysteria"),
-    #[serde(rename = "auth-str", alias = "auth_str")]
-    pub auth_str: String,
     pub name: String,
     pub server: String,
-    #[serde(flatten)]
+    #[serde(flatten, deserialize_with = "hysteria_v1_flatten_deserialize_with")]
     pub others: HashMap<String, Value>,
 }
 
@@ -23,12 +55,9 @@ pub struct HysteriaV1Proxy {
 pub struct HysteriaV2Proxy {
     #[serde(rename = "type")]
     pub kind: MustBe!("hysteria2"),
-    pub password: String,
-    #[serde(alias = "password")]
-    pub auth: String,
     pub name: String,
     pub server: String,
-    #[serde(flatten)]
+    #[serde(flatten, deserialize_with = "hysteria_v2_flatten_deserialize_with")]
     pub others: HashMap<String, Value>,
 }
 
@@ -108,6 +137,7 @@ pub struct ClashConfig {
 
 #[cfg(test)]
 mod tests {
+    use std::assert_matches::assert_matches;
     use super::{ClashConfig, Proxy};
 
     #[test]
@@ -141,11 +171,12 @@ mod tests {
 
         assert_eq!(proxy1, proxy2);
 
-        matches!(&proxy1, &Proxy::HysteriaV1(_));
+        assert_matches!(&proxy1, &Proxy::HysteriaV1(_));
 
         #[allow(irrefutable_let_patterns)]
         if let Proxy::HysteriaV1(proxy) = proxy1 {
-            assert_eq!(&proxy.auth_str, "dddd");
+            assert_eq!(proxy.others.get("auth_str").unwrap(), &serde_yaml::Value::String("dddd".to_string()));
+            assert_eq!(proxy.others.get("auth-str").unwrap(), &serde_yaml::Value::String("dddd".to_string()));
         }
     }
 
@@ -157,12 +188,12 @@ mod tests {
 
         let proxy1: Proxy = serde_yaml::from_str(proxy_str1).expect("should parse proxy success");
 
-        matches!(&proxy1, &Proxy::HysteriaV2(_));
+        assert_matches!(&proxy1, &Proxy::HysteriaV2(_));
 
         #[allow(irrefutable_let_patterns)]
-        if let Proxy::HysteriaV2(proxy) = proxy1 {
-            assert_eq!(&proxy.auth, "dddd");
-            assert_eq!(&proxy.password, "dddd");
+        if let Proxy::HysteriaV2(proxy) = &proxy1 {
+            assert_eq!(proxy.others.get("password").unwrap(), &serde_yaml::Value::String("dddd".to_string()));
+            assert_eq!(proxy.others.get("auth").unwrap(), &serde_yaml::Value::String("dddd".to_string()));
         }
     }
 }
