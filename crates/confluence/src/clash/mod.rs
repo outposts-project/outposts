@@ -20,6 +20,19 @@ pub struct HysteriaV1Proxy {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct HysteriaV2Proxy {
+    #[serde(rename = "type")]
+    pub kind: MustBe!("hysteria2"),
+    pub password: String,
+    #[serde(alias = "password")]
+    pub auth: String,
+    pub name: String,
+    pub server: String,
+    #[serde(flatten)]
+    pub others: HashMap<String, Value>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct OtherProxy {
     pub name: String,
     pub server: String,
@@ -31,12 +44,14 @@ pub struct OtherProxy {
 #[serde(untagged)]
 pub enum Proxy {
     HysteriaV1(HysteriaV1Proxy),
+    HysteriaV2(HysteriaV2Proxy),
     OtherProxy(OtherProxy)
 }
 
 impl Proxy {
     pub fn name(&self) -> &str {
         match self {
+            Proxy::HysteriaV2(proxy) => &proxy.name,
             Proxy::HysteriaV1(proxy) => &proxy.name,
             Proxy::OtherProxy(proxy) => &proxy.name,
         }
@@ -44,6 +59,7 @@ impl Proxy {
 
     pub fn server(&self) -> &str {
         match self {
+            Proxy::HysteriaV2(proxy) => &proxy.server,
             Proxy::HysteriaV1(proxy) => &proxy.server,
             Proxy::OtherProxy(proxy) => &proxy.server,
         }
@@ -130,6 +146,23 @@ mod tests {
         #[allow(irrefutable_let_patterns)]
         if let Proxy::HysteriaV1(proxy) = proxy1 {
             assert_eq!(&proxy.auth_str, "dddd");
+        }
+    }
+
+    #[test]
+    fn test_hysteria_v2_auth_polyfill () {
+        let proxy_str1 = r#"
+            { name: "aaa", type: hysteria2, server: "bbb", port: 4430, password: "dddd", alpn: h3, protocol: udp, up: 70, down: 150, fast-open: true, disable_mtu_discovery: true, skip-cert-verify: true, ports: 5000-20000 }
+        "#;
+
+        let proxy1: Proxy = serde_yaml::from_str(proxy_str1).expect("should parse proxy success");
+
+        matches!(&proxy1, &Proxy::HysteriaV2(_));
+
+        #[allow(irrefutable_let_patterns)]
+        if let Proxy::HysteriaV2(proxy) = proxy1 {
+            assert_eq!(&proxy.auth, "dddd");
+            assert_eq!(&proxy.password, "dddd");
         }
     }
 }
