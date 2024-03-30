@@ -24,7 +24,7 @@ pub fn mux_configs(
             {
                 // resolve proxy server root domain
                 let proxy_server_root =
-                    parse_server_tld(&name, &p.server)?;
+                    parse_server_tld(&name, p.server())?;
                 proxy_servers.insert(proxy_server_root);
             }
 
@@ -59,7 +59,7 @@ pub fn mux_configs(
                 .map(|(name, proxies)| ProxyGroup {
                     name: name.to_string(),
                     kind: ProxyGroupKind::Select,
-                    proxies: proxies.iter().map(|p| p.name.to_string()).collect(),
+                    proxies: proxies.iter().map(|p| p.name().to_string()).collect(),
                     others: HashMap::new(),
                 }),
         )

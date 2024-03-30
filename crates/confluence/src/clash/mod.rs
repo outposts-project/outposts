@@ -5,13 +5,49 @@ pub use http::parse_subscription_userinfo_in_header;
 use serde::{Deserialize, Serialize};
 use serde_yaml::Value;
 use std::collections::HashMap;
+use monostate::MustBe;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
-pub struct Proxy {
+pub struct HysteriaV1Proxy {
+    #[serde(rename = "type")]
+    pub kind: MustBe!("hysteria"),
+    #[serde(rename = "auth-str", alias = "auth_str")]
+    pub auth_str: String,
     pub name: String,
     pub server: String,
     #[serde(flatten)]
     pub others: HashMap<String, Value>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct OtherProxy {
+    pub name: String,
+    pub server: String,
+    #[serde(flatten)]
+    pub others: HashMap<String, Value>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[serde(untagged)]
+pub enum Proxy {
+    HysteriaV1(HysteriaV1Proxy),
+    OtherProxy(OtherProxy)
+}
+
+impl Proxy {
+    pub fn name(&self) -> &str {
+        match self {
+            Proxy::HysteriaV1(proxy) => &proxy.name,
+            Proxy::OtherProxy(proxy) => &proxy.name,
+        }
+    }
+
+    pub fn server(&self) -> &str {
+        match self {
+            Proxy::HysteriaV1(proxy) => &proxy.server,
+            Proxy::OtherProxy(proxy) => &proxy.server,
+        }
+    }
 }
 
 #[derive(
@@ -56,7 +92,7 @@ pub struct ClashConfig {
 
 #[cfg(test)]
 mod tests {
-    use super::ClashConfig;
+    use super::{ClashConfig, Proxy};
 
     #[test]
     fn test_model() -> anyhow::Result<()> {
@@ -72,5 +108,28 @@ mod tests {
         );
 
         Ok(())
+    }
+
+    #[test]
+    fn test_hysteria_v1_auth_str_polyfill () {
+        let proxy_str1 = r#"
+            { name: "aaa", type: hysteria, server: "bbb", port: 4430, auth_str: "dddd", alpn: h3, protocol: udp, up: 70, down: 150, fast-open: true, disable_mtu_discovery: true, skip-cert-verify: true, ports: 5000-20000 }
+        "#;
+
+        let proxy_str2 = r#"
+            { name: "aaa", type: hysteria, server: "bbb", port: 4430, auth-str: "dddd", alpn: h3, protocol: udp, up: 70, down: 150, fast-open: true, disable_mtu_discovery: true, skip-cert-verify: true, ports: 5000-20000 }
+        "#;
+
+        let proxy1: Proxy = serde_yaml::from_str(proxy_str1).expect("should parse proxy success");
+        let proxy2: Proxy = serde_yaml::from_str(proxy_str2).expect("should parse proxy success");
+
+        assert_eq!(proxy1, proxy2);
+
+        matches!(&proxy1, &Proxy::HysteriaV1(_));
+
+        #[allow(irrefutable_let_patterns)]
+        if let Proxy::HysteriaV1(proxy) = proxy1 {
+            assert_eq!(&proxy.auth_str, "dddd");
+        }
     }
 }

@@ -1,7 +1,6 @@
 # NOTE: For maximum performance, build using a nightly compiler
 # If you are using rust stable, remove the "-Zshare-generics=y" and "-Ztheads=8" below.
 [build]
-rustflags = ["-Zthreads=8"]
 
 [alias]
 xtask = "run --package xtask --"
