@@ -33,12 +33,20 @@ use sea_orm::ActiveValue::Set;
 use sea_orm::{IntoActiveModel, QuerySelect, TryIntoModel};
 use std::str::FromStr;
 use std::sync::Arc;
+use tokio::sync::RwLock;
+
+#[derive(Clone)]
+pub struct JwksConfig {
+    pub jwks_set: Arc<biscuit::jwk::JWKSet<biscuit::Empty>>,
+    pub jwks_expiry: std::time::Instant,
+}
 
 #[derive(Clone)]
 pub struct AppState {
     pub conn: DatabaseConnection,
     pub config: AppConfig,
     pub names_generator: Arc<rnglib::RNG>,
+    pub jwks: Arc<RwLock<Option<JwksConfig>>>,
 }
 
 impl AppState {
@@ -47,6 +55,7 @@ impl AppState {
             conn,
             config,
             names_generator: Arc::new(rnglib::RNG::from(&rnglib::Language::Elven)),
+            jwks: Arc::new(RwLock::new(None)),
         }
     }
 }

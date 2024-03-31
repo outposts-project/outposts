@@ -10,6 +10,16 @@ pub enum AuthConfig {
     },
 }
 
+impl AuthConfig {
+    pub fn get_jwks_uri(&self) -> Option<&str> {
+        if let AuthConfig::JWT { jwks_uri, .. } = &self {
+            Some(jwks_uri as &str)
+        } else {
+            None
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct AppConfig {
     pub port: u16,

@@ -1,6 +1,6 @@
 use crate::config::AuthConfig;
 use crate::error::AppError;
-use crate::services::AppState;
+use crate::services::{AppState, JwksConfig};
 use axum::{
     extract::{Request, State},
     http,
@@ -10,6 +10,39 @@ use axum::{
 use biscuit::{jwk, Validation, ValidationOptions, JWT};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+
+pub async fn get_jwks_cached(
+    state: &AppState,
+    jwks_uri: &str,
+) -> Result<Arc<jwk::JWKSet<biscuit::Empty>>, AppError> {
+    let jwks_conf = {
+        let jwks_conf = state.jwks.read().await;
+        jwks_conf
+            .as_ref()
+            .map(|conf| (conf.jwks_expiry, conf.jwks_set.clone()))
+    };
+    if let Some((jwks_expiry, jwks_set)) = jwks_conf {
+        if jwks_expiry > std::time::Instant::now() {
+            return Ok(jwks_set);
+        }
+    }
+    let mut jwks = state.jwks.write().await;
+    let jwks_res = reqwest::get(jwks_uri).await?.text().await?;
+
+    let jwk_set: jwk::JWKSet<biscuit::Empty> =
+        serde_json::from_str(&jwks_res).map_err(AppError::unauthorized)?;
+
+    let jwk_set = Arc::new(jwk_set);
+
+    let _ = jwks.insert(JwksConfig {
+        jwks_expiry: std::time::Instant::now()
+            .checked_add(std::time::Duration::from_secs(300))
+            .ok_or_else(|| anyhow::anyhow!("get_jwks_cached failed to add 5 mins"))?,
+        jwks_set: jwk_set.clone(),
+    });
+
+    Ok(jwk_set)
+}
 
 #[derive(Clone)]
 pub struct CurrentUser {
@@ -63,10 +96,7 @@ pub async fn authorize_current_user(
             }
             let auth_token = &auth_header[(BEARER_TOKEN_PREFIX.len() + 1)..];
 
-            let jwks_res = reqwest::get(jwks_uri).await?.text().await?;
-
-            let jwk_set: jwk::JWKSet<biscuit::Empty> =
-                serde_json::from_str(&jwks_res).map_err(AppError::unauthorized)?;
+            let jwk_set = get_jwks_cached(&state, &jwks_uri).await?;
 
             let token = JWT::<ScopedClaims, biscuit::Empty>::new_encoded(auth_token);
             let algorithm = token
@@ -76,10 +106,8 @@ pub async fn authorize_current_user(
                 .algorithm;
 
             let claims = token
-                .decode_with_jwks(&jwk_set, Some(algorithm))
+                .decode_with_jwks(jwk_set.as_ref(), Some(algorithm))
                 .map_err(AppError::unauthorized)?;
-
-            tracing::error!("authenticating token with claims: {:#?}", claims);
 
             claims
                 .validate({
