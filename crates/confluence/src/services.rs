@@ -8,17 +8,17 @@ use crate::dto::{
     ConfluenceUpdateCronDto, SubscribeSourceCreationDto, SubscribeSourceDto,
     SubscribeSourceUpdateDto,
 };
-use crate::entities::subscribe_source;
+use crate::models::subscribe_source;
 use crate::error::ConfigError;
 use crate::mux::mux_configs;
 use crate::{
     dto::ProfileCreationDto,
-    entities::profile,
+    models::profile,
     error::AppError,
     {
         dto::{ConfluenceDto, ConfluenceUpdateDto, ProfileDto},
-        entities,
-        entities::confluence,
+        models,
+        models::confluence,
     },
 };
 use axum::extract::{Path, State};
@@ -138,8 +138,8 @@ pub async fn find_many_confluences(
     let cms = cms?;
 
     let (pms, sms) = tokio::try_join!(
-        cms.load_many(entities::profile::Entity, db),
-        cms.load_many(entities::subscribe_source::Entity, db)
+        cms.load_many(models::profile::Entity, db),
+        cms.load_many(models::subscribe_source::Entity, db)
     )?;
 
     let confluences_dto = izip!(cms.into_iter(), pms.into_iter(), sms.into_iter())
@@ -187,6 +187,9 @@ pub async fn update_one_confluence(
     }
     if let Some(user_agent) = confluence_update_dto.user_agent {
         cm.user_agent = Set(user_agent);
+    }
+    if let Some(name) = confluence_update_dto.name {
+        cm.name = Set(name);
     }
     cm = cm.save(db).await?;
     let cm = cm.try_into_model()?;
@@ -477,7 +480,7 @@ pub async fn update_one_subscribe_source(
     let db = &state.conn;
     let mut pm = subscribe_source::Entity::find_by_id(id)
         .find_with_related(confluence::Entity)
-        .filter(confluence::Column::Id.eq(&current_user.user_id))
+        .filter(confluence::Column::Creator.eq(&current_user.user_id))
         .limit(1)
         .all(db)
         .await?;

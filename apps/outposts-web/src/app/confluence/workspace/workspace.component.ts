@@ -39,7 +39,12 @@ import { hourPlusLevelCronExprValidator } from '../validators/cron-expr.validato
   selector: 'confluence-workspace',
   template: `
     <div class="card flex-1 min-w-0">
-      <p-fieldset [legend]="(confluenceName$ | async)!" class="flex-1 min-w-0">
+      <p-fieldset class="flex-1 min-w-0">
+        <ng-template pTemplate="header">
+          <div class="flex align-items-center gap-2 px-2" style="cursor: pointer;" (click)="openUpdateNameDialog()">
+              <span class="font-bold">{{(confluenceName$ | async)!}}</span>
+          </div>
+        </ng-template>
         <div
           class="flex justify-content-between align-items-center surface-border border-y-1 mb-4 p-3 font-bold"
           style="background: #f9fafb;"
@@ -359,7 +364,62 @@ import { hourPlusLevelCronExprValidator } from '../validators/cron-expr.validato
         </div>
       </form>
     </p-dialog>
-    } @if (subscribeSourceUpdate) {
+    } 
+    @if (nameUpdateDialog) {
+    <p-dialog
+      header="Rename"
+      [visible]="true"
+      (visibleChange)="cancelUpdateNameDialog()"
+      [modal]="true"
+      [style]="{ width: '50vw' }"
+      [draggable]="false"
+      [resizable]="false"
+      [baseZIndex]="100"
+    >
+      <form
+        [formGroup]="nameUpdateDialog.form"
+        class="w-full flex flex-column"
+        onsubmit="return false;"
+      >
+        @for (item of nameUpdateDialog.form.controls | keyvalue; track
+        item.key) {
+        <label
+          style="text-transform: capitalize;"
+          [ngClass]="{ 'mt-4': !$first }"
+          for="update-name-{{ item.key }}"
+        >
+          {{ item.key }}
+        </label>
+        <input
+          class="mt-2"
+          [ngClass]="{
+            'ng-invalid': item.value.invalid,
+            'ng-dirty': item.value.touched
+          }"
+          type="text"
+          id="update-name-{{ item.key }}"
+          pInputText
+          [formControlName]="item.key"
+          autocomplete="off"
+        />
+        }
+        <div class="flex justify-content-end gap-2 mt-4">
+          <p-button
+            label="Cancel"
+            icon="pi pi-times"
+            [outlined]="true"
+            (click)="cancelUpdateNameDialog()"
+          ></p-button>
+          <p-button
+            label="Save"
+            icon="pi pi-check"
+            (click)="acceptUpdateNameDialog()"
+          ></p-button>
+        </div>
+      </form>
+    </p-dialog>
+    }
+    @if (subscribeSourceUpdate) {
     <p-dialog
       header="Edit Subscribe Source"
       [visible]="true"
@@ -553,6 +613,11 @@ export class WorkspaceComponent implements OnInit {
   uaUpdateForm = this.fb.group({
     userAgent: this.fb.control('', []),
   });
+  nameUpdateDialog?: {
+    form: FormGroup<{
+      name: FormControl<string | null>;
+    }>;
+  };
 
   ngOnInit() {
     this.confluenceId$
@@ -615,6 +680,50 @@ export class WorkspaceComponent implements OnInit {
           userAgent: ua,
         });
       });
+  }
+
+  openUpdateNameDialog() {
+    this.nameUpdateDialog = {
+      form: this.fb.group({
+        name: this.fb.control(this.confluence$.getValue()?.name ?? '', [Validators.required])
+      })
+    }
+  }
+
+  acceptUpdateNameDialog () {
+    const form = this.nameUpdateDialog?.form;
+    if (!this.nameUpdateDialog || !form) {
+      return;
+    }
+    form.markAllAsTouched();
+    if (!form.valid) {
+      return;
+    }
+    this.overlayService
+    .withSuspense(
+      this.confluence$.pipe(
+        take(1),
+        filter((c): c is ConfluenceDto => !!c),
+        switchMap((c) =>
+          this.confluenceService.updateConfluence(c.id, {
+            name: form.value.name ?? undefined
+          })
+        ),
+        takeUntilDestroyed(this.destoryRef)
+      )
+    )
+    .subscribe((c) => {
+      this.confluence$.next(c);
+      this.overlayService.toast({
+        severity: 'success',
+        summary: 'Success',
+        detail: 'Saved successfully',
+      });
+    });
+  }
+
+  cancelUpdateNameDialog () {
+    this.nameUpdateDialog = undefined;
   }
 
   saveTmpl() {

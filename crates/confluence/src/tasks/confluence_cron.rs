@@ -1,5 +1,5 @@
 use crate::{
-    entities::confluence,
+    models::confluence,
     services::mux_one_confluence_impl,
     error::AppError,
     services::{

@@ -8,7 +8,7 @@ pub mod auth;
 pub mod clash;
 pub mod config;
 pub mod dto;
-pub mod entities;
+pub mod models;
 pub mod error;
 pub mod migrations;
 pub mod mux;

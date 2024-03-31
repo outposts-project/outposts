@@ -31,7 +31,13 @@ use tracing_subscriber::EnvFilter;
 async fn main() -> Result<(), AppError> {
     tracing_subscriber::fmt::fmt()
         .with_env_filter(
-            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),
+            EnvFilter::try_from_default_env().unwrap_or_else(|_| {
+                if cfg!(debug_assertions) || cfg!(test) {
+                    EnvFilter::new("debug")
+                } else {
+                    EnvFilter::new("info")
+                }
+            }),
         )
         .init();
 

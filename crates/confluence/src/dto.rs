@@ -1,4 +1,4 @@
-use crate::entities;
+use crate::models;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -36,8 +36,8 @@ pub struct SubscribeSourceDto {
     pub sub_expire: Option<i64>,
 }
 
-impl From<entities::subscribe_source::Model> for SubscribeSourceDto {
-    fn from(value: entities::subscribe_source::Model) -> Self {
+impl From<models::subscribe_source::Model> for SubscribeSourceDto {
+    fn from(value: models::subscribe_source::Model) -> Self {
         Self {
             id: value.id,
             url: value.url,
@@ -54,8 +54,8 @@ impl From<entities::subscribe_source::Model> for SubscribeSourceDto {
     }
 }
 
-impl From<entities::profile::Model> for ProfileDto {
-    fn from(value: entities::profile::Model) -> Self {
+impl From<models::profile::Model> for ProfileDto {
+    fn from(value: models::profile::Model) -> Self {
         Self {
             id: value.id,
             confluence_id: value.confluence_id,
@@ -103,9 +103,9 @@ pub struct ConfluenceDto {
 
 impl ConfluenceDto {
     pub fn from_orm(
-        confluence: entities::confluence::Model,
-        sms: Vec<entities::subscribe_source::Model>,
-        pms: Vec<entities::profile::Model>,
+        confluence: models::confluence::Model,
+        sms: Vec<models::subscribe_source::Model>,
+        pms: Vec<models::profile::Model>,
     ) -> Self {
         Self {
             id: confluence.id,
@@ -160,6 +160,8 @@ pub struct ConfluenceUpdateDto {
     pub template: Option<String>,
     #[ts(optional)]
     pub user_agent: Option<String>,
+    #[ts(optional)]
+    pub name: Option<String>
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
