@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { AuthService } from './auth.service';
 import { take } from 'rxjs';
 import { authInterceptor } from './auth.interceptor';
+import { AuthRoutingModule } from './auth-routing.module';
 
 @NgModule({
   declarations: [],
@@ -23,6 +24,9 @@ import { authInterceptor } from './auth.interceptor';
       deps: [AuthService],
     }
   ],
-  imports: [CommonModule],
+  imports: [
+    CommonModule,
+    AuthRoutingModule
+  ],
 })
 export class AuthModule {}

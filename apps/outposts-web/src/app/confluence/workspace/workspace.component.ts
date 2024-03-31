@@ -38,7 +38,9 @@ import { hourPlusLevelCronExprValidator } from '../validators/cron-expr.validato
 @Component({
   selector: 'confluence-workspace',
   template: `
-    <div class="card flex-1 min-w-0">
+    <p-breadcrumb 
+      class="max-w-full" [model]="breadcrumb.items" [home]="breadcrumb.home"></p-breadcrumb>
+    <div class="card flex-1 min-w-0 mt-2">
       <p-fieldset class="flex-1 min-w-0">
         <ng-template pTemplate="header">
           <div class="flex align-items-center gap-2 px-2" style="cursor: pointer;" (click)="openUpdateNameDialog()">
@@ -305,7 +307,7 @@ import { hourPlusLevelCronExprValidator } from '../validators/cron-expr.validato
               pInputText
               formControlName="userAgent"
               autocomplete="off"
-              placeholder="ClashforWindows/0.20.39"
+              placeholder="clash-verge/v1.5.11"
             />
           </form>
         </div>
@@ -534,6 +536,11 @@ import { hourPlusLevelCronExprValidator } from '../validators/cron-expr.validato
   `,
   styles: `
     :host ::ng-deep {
+      .p-breadcrumb {
+        background-color: transparent;
+        border: none;
+      }
+
       .confluence-subscribe-source-item {
         .p-card-content {
           padding: 0 1em;
@@ -618,6 +625,11 @@ export class WorkspaceComponent implements OnInit {
       name: FormControl<string | null>;
     }>;
   };
+
+  breadcrumb = {
+    items: [{ label: 'Confluence', routerLink: ['/confluence'] }, { label: 'Workspace' }],
+    home: { icon: 'pi pi-home', routerLink: '/' }
+  }
 
   ngOnInit() {
     this.confluenceId$

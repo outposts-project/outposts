@@ -220,3 +220,4 @@ index.d.ts.map
 /.env.bk
 /.angular
 /*.session.sql
+**/rustc-ice*

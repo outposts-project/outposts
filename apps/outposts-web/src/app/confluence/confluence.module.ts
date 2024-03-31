@@ -20,11 +20,13 @@ import { InputTextModule } from 'primeng/inputtext';
 import { ClipboardModule } from '@app/clipboard/clipboard.module';
 import { QrcodeModule } from '@app/qrcode/qrcode.module';
 import { SkeletonModule } from 'primeng/skeleton';
+import { BreadcrumbModule } from 'primeng/breadcrumb';
 
 @NgModule({
   declarations: [DashboardComponent, WorkspaceComponent],
   providers: [ConfluenceService],
   imports: [
+    BreadcrumbModule,
     CommonModule,
     ConfluenceRoutingModule,
     DocModule,

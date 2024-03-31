@@ -28,8 +28,8 @@ import {
   EMPTY,
 } from 'rxjs';
 import {
-  AbstractNavigator,
   AppState,
+  AUTH_CALLBACK_ORIGIN_URI_KEY,
   AUTH_RESOURCES,
   AUTH_SCOPES,
   SignInOptions,
@@ -39,7 +39,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { WINDOW } from '@app/core/providers/window';
 import { DOCUMENT, Location } from '@angular/common';
-import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
+import { ActivatedRouteSnapshot, Router, RouterStateSnapshot } from '@angular/router';
 import { AccessTokenClaims } from '@logto/js';
 
 @Injectable({
@@ -47,11 +47,11 @@ import { AccessTokenClaims } from '@logto/js';
 })
 export class AuthService<TAppState extends AppState = AppState> {
   protected logtoClient: LogtoClient;
-  protected readonly navigator = inject(AbstractNavigator);
   protected readonly destoryRef = inject(DestroyRef);
   protected readonly window = inject(WINDOW);
   protected readonly location = inject(Location);
   protected readonly document = inject(DOCUMENT);
+  protected readonly router = inject(Router);
 
   constructor() {
     this.logtoClient = new LogtoClient({
@@ -73,10 +73,7 @@ export class AuthService<TAppState extends AppState = AppState> {
         switchMap((isCallback) =>
           checkSessionOrCallback$(isCallback).pipe(
             catchError((error) => {
-              /**
-               * @TODO FIXME HERE
-               */
-              this.navigator.navigateByUrl('/');
+              this.router.navigateByUrl('/', { replaceUrl: true });
               this.error = error;
               return of(undefined);
             }),
@@ -236,6 +233,19 @@ export class AuthService<TAppState extends AppState = AppState> {
         }
       }),
       map(([result]) => result),
+      tap((signInCallbackResult) => {
+        let authCallbackOriginUri = '/';
+        try {
+          if (signInCallbackResult) {
+            authCallbackOriginUri = localStorage.getItem(AUTH_CALLBACK_ORIGIN_URI_KEY) || '/';
+          }
+          localStorage.removeItem(AUTH_CALLBACK_ORIGIN_URI_KEY)
+        } catch (e) {
+          console.error('Failed to load origin URL in local storage.', e);
+        }
+        this.router.navigateByUrl(authCallbackOriginUri, { replaceUrl: true });
+        return signInCallbackResult;
+      })
     );
   }
 
@@ -244,7 +254,10 @@ export class AuthService<TAppState extends AppState = AppState> {
   }
 
   getResourceToken(resource: string): Observable<string | null> {
-    return from(this.logtoClient.getAccessToken(resource)).pipe(catchError(() => of(null)));
+    return from(this.logtoClient.getAccessToken(resource))
+    .pipe(
+      catchError(() => of(null))
+    );
   }
 
   getTokenClaims({
@@ -275,20 +288,30 @@ export class AuthService<TAppState extends AppState = AppState> {
   canActivate({
     scopes: expectedScopes,
     resources,
-    redirectUrlToBase = '/',
+    originUrlToBase,
   }: {
     resources: string[];
     scopes: RegExp[];
-    redirectUrlToBase?: string;
+    originUrlToBase?: string;
   }): (route: ActivatedRouteSnapshot, state: RouterStateSnapshot) => Observable<boolean> {
-    return (_route, _state) =>
-      this.isAuthenticated$.pipe(
+    return (_route, state) => {
+      const originUrl = originUrlToBase ?? state.url;
+      return this.isAuthenticated$.pipe(
         switchMap((isAuth) => {
           if (isAuth) {
             return of(true);
           }
-          const redirectUrl = `${this.document.baseURI.replace(/\/$/, '')}${redirectUrlToBase}`;
-          return from(this.signIn({ redirectUrl, signInType: 'redirect' })).pipe(switchMap(() => EMPTY));
+
+          const redirectUrl = new URL(this.document.baseURI);
+          redirectUrl.pathname = '/auth/callback';
+
+          try {
+            localStorage.setItem(AUTH_CALLBACK_ORIGIN_URI_KEY, originUrl);
+          } catch (e) {
+            console.error('Failed to store origin URL in local storage.', e);
+          }
+    
+          return from(this.signIn({ redirectUrl: redirectUrl.toString(), signInType: 'redirect' })).pipe(switchMap(() => EMPTY));
         }),
         switchMap((_isAuth) => {
           return this.getTokenClaims({
@@ -301,5 +324,6 @@ export class AuthService<TAppState extends AppState = AppState> {
           );
         }),
       );
+    }
   }
 }

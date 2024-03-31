@@ -1,13 +1,13 @@
-use crate::services::AppState;
 use crate::config::AuthConfig;
 use crate::error::AppError;
+use crate::services::AppState;
 use axum::{
     extract::{Request, State},
     http,
     middleware::Next,
     response::Response,
 };
-use biscuit::{jwk, jws, Validation, ValidationOptions, JWT};
+use biscuit::{jwk, Validation, ValidationOptions, JWT};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
@@ -53,57 +53,60 @@ pub async fn authorize_current_user(
             let auth_header = if let Some(auth_header) = auth_header {
                 auth_header
             } else {
-                return Err(AppError::Unauthorized);
+                return Err(AppError::unauthorized_str("missing authorization header"));
             };
 
             if !auth_header.starts_with(BEARER_TOKEN_PREFIX) {
-                return Err(AppError::Unauthorized);
+                return Err(AppError::unauthorized_str(
+                    "missing authorization header prefix Bearer",
+                ));
             }
             let auth_token = &auth_header[(BEARER_TOKEN_PREFIX.len() + 1)..];
 
-            let jwks_res = reqwest::get(jwks_uri)
-                .await
-                .map_err(|e| AppError::Other(e.into()))?
-                .text()
-                .await
-                .map_err(|e| AppError::Other(e.into()))?;
+            let jwks_res = reqwest::get(jwks_uri).await?.text().await?;
 
             let jwk_set: jwk::JWKSet<biscuit::Empty> =
-                serde_json::from_str(&jwks_res).map_err(|e| AppError::Other(e.into()))?;
+                serde_json::from_str(&jwks_res).map_err(AppError::unauthorized)?;
 
             let token = JWT::<ScopedClaims, biscuit::Empty>::new_encoded(auth_token);
-            let header: &jws::Header<biscuit::Empty> = &token
+            let algorithm = token
                 .unverified_header()
-                .map_err(|_| AppError::Unauthorized)?;
-
-            let algorithm = header.registered.algorithm;
+                .map_err(AppError::unauthorized)?
+                .registered
+                .algorithm;
 
             let claims = token
                 .decode_with_jwks(&jwk_set, Some(algorithm))
-                .map_err(|_| AppError::Unauthorized)?;
+                .map_err(AppError::unauthorized)?;
 
-            let validation_options = ValidationOptions {
-              issuer: Validation::Validate(issuer.clone()),
-              audience: Validation::Validate(audience.clone()),
-              ..ValidationOptions::default()
-            };
+            tracing::error!("authenticating token with claims: {:#?}", claims);
 
             claims
-                .validate(validation_options)
-                .map_err(|_| AppError::Unauthorized)?;
+                .validate({
+                    ValidationOptions {
+                        issuer: Validation::Validate(issuer.clone()),
+                        audience: Validation::Validate(audience.clone()),
+                        issued_at: Validation::Ignored,
+                        ..ValidationOptions::default()
+                    }
+                })
+                .map_err(AppError::unauthorized)?;
 
-            let payload = claims.payload().map_err(|_| AppError::Unauthorized)?;
+            let payload = claims.payload().map_err(AppError::unauthorized)?;
 
             let sub = payload
                 .registered
                 .subject
                 .clone()
-                .ok_or_else(|| AppError::Unauthorized)?;
+                .ok_or_else(|| AppError::unauthorized_str("auth payload claims sub missing"))?;
 
             if !payload.private.scope.contains(READ_SCOPE)
                 || !payload.private.scope.contains(WRITE_SCOPE)
             {
-                return Err(AppError::Unauthorized);
+                return Err(AppError::unauthorized_str(format!(
+                    "missing required scopes {} {}",
+                    READ_SCOPE, WRITE_SCOPE
+                )));
             }
 
             Ok(CurrentUser { user_id: sub })

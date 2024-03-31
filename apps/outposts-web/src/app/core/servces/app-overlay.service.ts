@@ -13,10 +13,13 @@ export class AppOverlayService {
 
   constructor() {
     this.error$$.pipe(takeUntilDestroyed(this.destoryRef)).subscribe((err) => {
+      const detail = err?.error?.error_msg;
+      console.error(err);
       this.messageService.add({
         severity: 'error',
         summary: 'Error',
-        detail: err?.message,
+        detail: `${err?.message}${detail ? ` : ${detail}` : ''}`,
+        life: 5000
       });
     });
   }

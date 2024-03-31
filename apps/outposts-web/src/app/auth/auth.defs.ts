@@ -5,6 +5,7 @@ import { environment } from '@environments/environment';
 
 export const AUTH_RESOURCES = [environment.CONFLUENCE_API_ENDPOINT];
 export const AUTH_SCOPES = ['read:confluence', 'write:confluence'];
+export const AUTH_CALLBACK_ORIGIN_URI_KEY = 'auth_callback_origin_uri';
 
 export type UserAuthIdentity = {
   userId: string;
@@ -66,28 +67,4 @@ export interface AppState {
    * Any custom parameter to be stored in appState
    */
   [key: string]: any;
-}
-
-@Injectable({
-  providedIn: 'root',
-})
-export class AbstractNavigator {
-  private readonly location = inject(Location);
-  private readonly router = inject(Router);
-
-  /**
-   * Navigates to the specified url. The router will be used if one is available, otherwise it falls back
-   * to `window.history.replaceState`.
-   *
-   * @param url The url to navigate to
-   */
-  navigateByUrl(url: string): void {
-    if (this.router) {
-      this.router.navigateByUrl(url);
-
-      return;
-    }
-
-    this.location.replaceState(url);
-  }
 }

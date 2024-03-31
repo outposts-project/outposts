@@ -36,7 +36,7 @@ pub struct Model {
 impl Model {
     pub fn user_agent_or_default (&self) -> &str {
         if self.user_agent.is_empty() {
-            "ClashforWindows/0.20.39"
+            "clash-verge/v1.5.11"
         } else {
             &self.user_agent
         }

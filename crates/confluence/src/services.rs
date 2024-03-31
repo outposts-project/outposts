@@ -8,13 +8,13 @@ use crate::dto::{
     ConfluenceUpdateCronDto, SubscribeSourceCreationDto, SubscribeSourceDto,
     SubscribeSourceUpdateDto,
 };
-use crate::models::subscribe_source;
 use crate::error::ConfigError;
+use crate::models::subscribe_source;
 use crate::mux::mux_configs;
 use crate::{
     dto::ProfileCreationDto,
-    models::profile,
     error::AppError,
+    models::profile,
     {
         dto::{ConfluenceDto, ConfluenceUpdateDto, ProfileDto},
         models,
@@ -83,9 +83,7 @@ pub async fn sync_one_subscribe_source_with_url(
     ua: &str,
     db: &DatabaseConnection,
 ) -> Result<subscribe_source::Model, AppError> {
-    let client = reqwest::ClientBuilder::new()
-        .user_agent(ua)
-        .build()?;
+    let client = reqwest::ClientBuilder::new().user_agent(ua).build()?;
     let res = client.get(&sm.url).send().await?;
     let mut sm = sm.into_active_model();
     if let Some(sub_userinfo) = parse_subscription_userinfo_in_header(res.headers()) {
@@ -284,6 +282,12 @@ pub async fn mux_one_confluence_impl(
     for sm in &sms {
         let source = &sm.content as &str;
         let name = &sm.name as &str;
+        if source.is_empty() {
+            return Err(ConfigError::NotSync {
+                subscribe_source_name: name.to_string(),
+            }
+            .into());
+        }
         let config: ClashConfig = serde_yaml::from_str(source).map_err(ConfigError::from)?;
         sub_upload = match (sub_upload, sm.sub_upload) {
             (None, None) => None,
