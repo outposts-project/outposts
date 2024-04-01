@@ -11,6 +11,7 @@ pub async fn init_backend_jobs(
     app_state: Arc<AppState>,
 ) -> Result<(), JobSchedulerError> {
     let confluence_cron_task = Arc::new(ConfluenceCronTask { state: app_state });
+    
     job_scheduler
         .add(Job::new_repeated_async(
             Duration::from_secs(60),
@@ -27,6 +28,8 @@ pub async fn init_backend_jobs(
             },
         )?)
         .await?;
+
+
 
     job_scheduler.start().await?;
     Ok(())

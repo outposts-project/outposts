@@ -54,12 +54,14 @@ import { hourPlusLevelCronExprValidator } from '../validators/cron-expr.validato
           <div class="text-xl">Template</div>
           <div class="flex gap-2">
             <p-button
+              size="small"
               label="Save"
               icon="pi pi-check"
               (click)="saveTmpl()"
               [outlined]="true"
             ></p-button>
             <p-button
+              size="small"
               label="Reset"
               icon="pi pi-times"
               (click)="resetTmpl()"
@@ -86,6 +88,7 @@ import { hourPlusLevelCronExprValidator } from '../validators/cron-expr.validato
               <div class="text-xl">Subscribe Sources</div>
               <div class="flex gap-2">
                 <p-button
+                  size="small"
                   label="Sync"
                   icon="pi pi-sync"
                   (click)="syncConfluence()"
@@ -167,12 +170,14 @@ import { hourPlusLevelCronExprValidator } from '../validators/cron-expr.validato
                 class="flex align-items-center justify-content-center gap-1 mt-2"
               >
                 <p-button
+                  size="small"
                   label="Mux"
                   icon="pi pi-sliders-v"
                   (click)="muxConfluence()"
                   [outlined]="true"
                 ></p-button>
                 <p-button
+                  size="small"
                   label="Preview"
                   icon="pi pi-eye"
                   (click)="openPreviewMuxContentDialog()"
@@ -233,6 +238,7 @@ import { hourPlusLevelCronExprValidator } from '../validators/cron-expr.validato
           <div class="text-xl">Sync Schedule</div>
           <div class="flex gap-2">
             <p-button
+            size="small"
               label="Save"
               icon="pi pi-check"
               (click)="saveCron()"
@@ -284,6 +290,7 @@ import { hourPlusLevelCronExprValidator } from '../validators/cron-expr.validato
           <div class="text-xl">Sync User-Agent</div>
           <div class="flex gap-2">
             <p-button
+            size="small"
               label="Save"
               icon="pi pi-check"
               (click)="saveUA()"
@@ -319,7 +326,7 @@ import { hourPlusLevelCronExprValidator } from '../validators/cron-expr.validato
       [visible]="true"
       (visibleChange)="cancelCreateSubscribeSourceDialog()"
       [modal]="true"
-      [style]="{ width: '50vw' }"
+      [style]="{ width: '50vw', minWidth: '300px' }"
       [draggable]="false"
       [resizable]="false"
       [baseZIndex]="100"
@@ -353,12 +360,14 @@ import { hourPlusLevelCronExprValidator } from '../validators/cron-expr.validato
         }
         <div class="flex justify-content-end gap-2 mt-4">
           <p-button
+          size="small"
             label="Cancel"
             icon="pi pi-times"
             [outlined]="true"
             (click)="cancelCreateSubscribeSourceDialog()"
           ></p-button>
           <p-button
+          size="small"
             label="Create"
             icon="pi pi-check"
             (click)="acceptCreateSubscribeSourceDialog()"
@@ -373,7 +382,7 @@ import { hourPlusLevelCronExprValidator } from '../validators/cron-expr.validato
       [visible]="true"
       (visibleChange)="cancelUpdateNameDialog()"
       [modal]="true"
-      [style]="{ width: '50vw' }"
+      [style]="{ width: '50vw', minWidth: '300px' }"
       [draggable]="false"
       [resizable]="false"
       [baseZIndex]="100"
@@ -407,12 +416,14 @@ import { hourPlusLevelCronExprValidator } from '../validators/cron-expr.validato
         }
         <div class="flex justify-content-end gap-2 mt-4">
           <p-button
+          size="small"
             label="Cancel"
             icon="pi pi-times"
             [outlined]="true"
             (click)="cancelUpdateNameDialog()"
           ></p-button>
           <p-button
+          size="small"
             label="Save"
             icon="pi pi-check"
             (click)="acceptUpdateNameDialog()"
@@ -427,7 +438,7 @@ import { hourPlusLevelCronExprValidator } from '../validators/cron-expr.validato
       [visible]="true"
       (visibleChange)="cancelUpdateSubscribeSourceDialog()"
       [modal]="true"
-      [style]="{ width: '50vw' }"
+      [style]="{ width: '50vw', minWidth: '300px' }"
       [draggable]="false"
       [resizable]="false"
       [baseZIndex]="100"
@@ -476,12 +487,14 @@ import { hourPlusLevelCronExprValidator } from '../validators/cron-expr.validato
         }
         <div class="flex justify-content-end gap-2 mt-4">
           <p-button
+          size="small"
             label="Cancel"
             icon="pi pi-times"
             [outlined]="true"
             (click)="cancelUpdateSubscribeSourceDialog()"
           ></p-button>
           <p-button
+          size="small"
             label="Save"
             icon="pi pi-check"
             (click)="acceptUpdateSubscribeSourceDialog()"
@@ -495,7 +508,7 @@ import { hourPlusLevelCronExprValidator } from '../validators/cron-expr.validato
       [visible]="true"
       (visibleChange)="cancelPreviewSubscribeSourceContentDialog()"
       [modal]="true"
-      [style]="{ width: '50vw' }"
+      [style]="{ width: '50vw', minWidth: '300px' }"
       [draggable]="false"
       [resizable]="false"
       [baseZIndex]="100"
@@ -509,17 +522,17 @@ import { hourPlusLevelCronExprValidator } from '../validators/cron-expr.validato
     </p-dialog>
     } @if (urlPreview) {
     <p-dialog
-      header="Preview Subscribe Source Content"
+      header="Preview Profile Content"
       [visible]="true"
       (visibleChange)="cancelUrlPreviewDialog()"
       [modal]="true"
-      [style]="{ width: '50vw' }"
+      [style]="{ width: '50vw', minWidth: '300px' }"
       [draggable]="false"
       [resizable]="false"
       [baseZIndex]="100"
     >
       <div class="flex flex-column">
-        <a class="px-link" (click)="copyUrl(urlPreview.url)">
+        <a class="px-link profile-url" (click)="copyUrl(urlPreview.url)">
           {{ urlPreview.url }}
         </a>
         @if (urlPreview.qrcodeDataUrl) {
@@ -542,14 +555,18 @@ import { hourPlusLevelCronExprValidator } from '../validators/cron-expr.validato
       }
 
       .confluence-subscribe-source-item {
+        min-width: 9em;
+
         .p-card-content {
-          padding: 0 1em;
+          padding: 0;
         }
       }
 
       .confluence-profile-item {
+        min-width: 9em;
+
         .p-card-content {
-          padding: 0 1em;
+          padding: 0;
         }
       }
     }
@@ -560,8 +577,12 @@ import { hourPlusLevelCronExprValidator } from '../validators/cron-expr.validato
         top: 0;
       }
     }
-  `,
-  providers: [],
+
+    .profile-url {
+      margin-top: 0.5rem;
+      word-break: break-all;
+    }
+  `
 })
 export class WorkspaceComponent implements OnInit {
   protected readonly confluenceService = inject(ConfluenceService);
@@ -702,7 +723,7 @@ export class WorkspaceComponent implements OnInit {
     }
   }
 
-  acceptUpdateNameDialog () {
+  acceptUpdateNameDialog() {
     const form = this.nameUpdateDialog?.form;
     if (!this.nameUpdateDialog || !form) {
       return;
@@ -712,29 +733,29 @@ export class WorkspaceComponent implements OnInit {
       return;
     }
     this.overlayService
-    .withSuspense(
-      this.confluence$.pipe(
-        take(1),
-        filter((c): c is ConfluenceDto => !!c),
-        switchMap((c) =>
-          this.confluenceService.updateConfluence(c.id, {
-            name: form.value.name ?? undefined
-          })
-        ),
-        takeUntilDestroyed(this.destoryRef)
+      .withSuspense(
+        this.confluence$.pipe(
+          take(1),
+          filter((c): c is ConfluenceDto => !!c),
+          switchMap((c) =>
+            this.confluenceService.updateConfluence(c.id, {
+              name: form.value.name ?? undefined
+            })
+          ),
+          takeUntilDestroyed(this.destoryRef)
+        )
       )
-    )
-    .subscribe((c) => {
-      this.confluence$.next(c);
-      this.overlayService.toast({
-        severity: 'success',
-        summary: 'Success',
-        detail: 'Saved successfully',
+      .subscribe((c) => {
+        this.confluence$.next(c);
+        this.overlayService.toast({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Saved successfully',
+        });
       });
-    });
   }
 
-  cancelUpdateNameDialog () {
+  cancelUpdateNameDialog() {
     this.nameUpdateDialog = undefined;
   }
 

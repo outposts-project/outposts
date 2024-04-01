@@ -1,17 +1,17 @@
 use crate::{
+    error::AppError,
     models::confluence,
     services::mux_one_confluence_impl,
-    error::AppError,
     services::{
         find_certain_confluence_profiles_and_subscribe_sources, sync_one_subscribe_source_with_url,
         AppState,
-    }
+    },
 };
-use sea_orm::{prelude::*, Set, Unchanged};
 use chrono::Utc;
 use chrono_tz::Tz;
 use cron::Schedule;
 use futures::future::try_join_all;
+use sea_orm::{prelude::*, Set, Unchanged};
 use std::str::FromStr;
 use std::sync::Arc;
 
@@ -48,12 +48,10 @@ impl ConfluenceCronTask {
             let id = cm.id;
             let cron_next_at =
                 if let (Some(cron_expr), Some(cron_expr_tz)) = (&cm.cron_expr, &cm.cron_expr_tz) {
-                    if let Ok(cron) = Schedule::from_str(cron_expr) {
-                        if let Ok(tz) = cron_expr_tz.parse::<Tz>() {
-                            cron.upcoming(tz).next().map(|t| t.naive_utc())
-                        } else {
-                            None
-                        }
+                    if let (Ok(cron), Ok(tz)) =
+                        (Schedule::from_str(cron_expr), cron_expr_tz.parse::<Tz>())
+                    {
+                        cron.upcoming(tz).next().map(|t| t.naive_utc())
                     } else {
                         None
                     }

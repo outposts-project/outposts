@@ -28,14 +28,14 @@ import { AppOverlayService } from '@app/core/servces/app-overlay.service';
         >
           <p-avatar
             [label]="item.name.slice(0, 1).toUpperCase()"
-            styleClass="mr-2"
+            styleClass="mr-1"
             size="xlarge"
           ></p-avatar>
           <div
             class="flex justify-content-between align-items-center flex-1 gap-4"
           >
             <div
-              class="flex flex-column align-items-center sm:align-items-start gap-2"
+              class="flex flex-column align-items-start gap-2"
             >
               <div class="text-2xl font-bold text-900">{{ item.name }}</div>
               <div class="flex align-items-center gap-3">
