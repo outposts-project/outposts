@@ -1,12 +1,1 @@
-{
-  "filesOrder": [
-    "api-robust",
-    "outposts-web",
-    "confluence"
-  ],
-  "selectedList": [
-    "outposts-web",
-    "confluence"
-  ],
-  "disabledDefalutRules": true
-}
+{"filesOrder":["api-robust","outposts-web","confluence"],"selectedList":["outposts-web"],"disabledDefalutRules":true}

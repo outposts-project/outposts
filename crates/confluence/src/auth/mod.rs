@@ -96,7 +96,7 @@ pub async fn authorize_current_user(
             }
             let auth_token = &auth_header[(BEARER_TOKEN_PREFIX.len() + 1)..];
 
-            let jwk_set = get_jwks_cached(&state, &jwks_uri).await?;
+            let jwk_set = get_jwks_cached(&state, jwks_uri).await?;
 
             let token = JWT::<ScopedClaims, biscuit::Empty>::new_encoded(auth_token);
             let algorithm = token

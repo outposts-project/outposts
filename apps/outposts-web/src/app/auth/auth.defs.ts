@@ -1,18 +1,22 @@
-import { inject, Injectable } from '@angular/core';
-import { Router } from '@angular/router';
-import { Location } from '@angular/common';
-import { environment } from '@environments/environment';
+import { AUTH_CONFLUENCE_CONFIG } from '@app/confluence/confluence.defs';
 
-export const AUTH_RESOURCES = [environment.CONFLUENCE_API_ENDPOINT];
-export const AUTH_SCOPES = ['read:confluence', 'write:confluence'];
+export interface AuthResourceConfig {
+  resource: string;
+  scopes: string[];
+}
+
+export const AUTH_CALLBACK_PATH = '/auth/callback';
 export const AUTH_CALLBACK_ORIGIN_URI_KEY = 'auth_callback_origin_uri';
+export const AUTH_RESOURCE_CONFIGS: AuthResourceConfig[] = [
+  AUTH_CONFLUENCE_CONFIG
+]
 
-export type UserAuthIdentity = {
+export type AuthUserIdentity = {
   userId: string;
   details?: Record<string, unknown>;
 };
 
-export type UserAuthState = {
+export type AuthUserState = {
   sub: string;
   name?: string | null;
   username?: string | null;
@@ -22,7 +26,7 @@ export type UserAuthState = {
   phone_number?: string | null;
   phone_number_verified?: boolean;
   custom_data?: unknown;
-  identities?: Record<string, UserAuthIdentity>;
+  identities?: Record<string, AuthUserIdentity>;
 };
 
 export interface RedirectSignInOptions {
@@ -52,19 +56,3 @@ export interface PopupSignOutOptions {
 }
 
 export type SignOutOptions = RedirectSignOutOptions | PopupSignOutOptions;
-
-/**
- * Angular specific state to be stored before redirect
- */
-export interface AppState {
-  /**
-   * Target path the app gets routed to after
-   * handling the callback from Auth0 (defaults to '/')
-   */
-  target?: string;
-
-  /**
-   * Any custom parameter to be stored in appState
-   */
-  [key: string]: any;
-}

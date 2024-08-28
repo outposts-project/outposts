@@ -1,204 +1,111 @@
 import { DestroyRef, inject, Injectable } from '@angular/core';
-import LogtoClient, { IdTokenClaims } from '@logto/browser';
+import LogtoClient from '@logto/browser';
+import { type AccessTokenClaims } from '@logto/js';
 import { environment } from '../../environments/environment';
 import {
-  BehaviorSubject,
   catchError,
-  concatMap,
-  defer,
   distinctUntilChanged,
-  filter,
   from,
-  iif,
   map,
   merge,
-  mergeMap,
   Observable,
   of,
-  pairwise,
   ReplaySubject,
   shareReplay,
-  startWith,
   Subject,
   switchMap,
   tap,
   throwError,
-  withLatestFrom,
   forkJoin,
-  EMPTY,
+  EMPTY
 } from 'rxjs';
 import {
-  AppState,
   AUTH_CALLBACK_ORIGIN_URI_KEY,
-  AUTH_RESOURCES,
-  AUTH_SCOPES,
   SignInOptions,
   SignOutOptions,
-  UserAuthState,
+  AuthUserState,
+  AUTH_RESOURCE_CONFIGS,
+  AuthResourceConfig,
+  AUTH_CALLBACK_PATH,
 } from './auth.defs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { WINDOW } from '@app/core/providers/window';
 import { DOCUMENT, Location } from '@angular/common';
 import { ActivatedRouteSnapshot, Router, RouterStateSnapshot } from '@angular/router';
-import { AccessTokenClaims } from '@logto/js';
+import { parseScope } from './auth.utils';
 
 @Injectable({
   providedIn: 'root',
 })
-export class AuthService<TAppState extends AppState = AppState> {
-  protected logtoClient: LogtoClient;
+export class AuthService {
+  protected readonly logtoClient: LogtoClient = new LogtoClient({
+    endpoint: environment.AUTH_ENDPOINT,
+    appId: environment.AUTH_APPID,
+    resources: AUTH_RESOURCE_CONFIGS.map((r) => r.resource),
+    scopes: AUTH_RESOURCE_CONFIGS.flatMap((r) => r.scopes),
+  });
   protected readonly destoryRef = inject(DestroyRef);
   protected readonly window = inject(WINDOW);
   protected readonly location = inject(Location);
   protected readonly document = inject(DOCUMENT);
   protected readonly router = inject(Router);
 
-  constructor() {
-    this.logtoClient = new LogtoClient({
-      endpoint: environment.AUTH_ENDPOINT,
-      appId: environment.AUTH_APPID,
-      resources: AUTH_RESOURCES,
-      scopes: AUTH_SCOPES,
-    });
+  protected readonly initSubject$ = new Subject<void>();
+  protected readonly refreshSubject$ = new Subject<void>();
+  protected readonly errorSubject$ = new ReplaySubject<Error>(1);
 
-    const checkSessionOrCallback$ = (isCallback: boolean) =>
-      iif(
-        () => isCallback,
-        this.handleSignInCallback(location.href),
-        defer(() => this.logtoClient.isAuthenticated()),
-      );
-
-    this.shouldHandleCallback()
-      .pipe(
-        switchMap((isCallback) =>
-          checkSessionOrCallback$(isCallback).pipe(
-            catchError((error) => {
-              this.router.navigateByUrl('/', { replaceUrl: true });
-              this.error = error;
-              return of(undefined);
-            }),
-          ),
-        ),
-        tap(() => {
-          this.isLoading = false;
-        }),
-        takeUntilDestroyed(this.destoryRef),
-      )
-      .subscribe();
-  }
-
-  protected isLoadingSubject$ = new BehaviorSubject<boolean>(true);
-  protected refreshSubject$ = new Subject<void>();
-  protected accessTokenSubject$ = new ReplaySubject<string>(1);
-  protected errorSubject$ = new ReplaySubject<Error>(1);
-  protected appStateSubject$ = new ReplaySubject<TAppState>(1);
-
-  /**
-   * Emits boolean values indicating the loading state of the SDK.
-   */
-  public readonly isLoading$ = this.isLoadingSubject$.asObservable();
-
-  /**
-   * Trigger used to pull User information from the AuthClient.
-   * Triggers when the access token has changed.
-   */
-  protected accessTokenTrigger$ = this.accessTokenSubject$.pipe(
-    distinctUntilChanged(),
-    startWith(null),
-    pairwise(),
-    map(([prev, curr]) => ({
-      current: curr as string,
-      previous: prev as string | null,
-    })),
+  protected readonly authSyncTrigger$ = merge(
+    this.initSubject$,
+    this.refreshSubject$,
   );
 
-  /**
-   * Trigger used to pull User information from the AuthClient.
-   * Triggers when an event occurs that needs to retrigger the User Profile information.
-   * Events: Login, Access Token change and Logout
-   */
-  protected readonly isAuthenticatedTrigger$ = this.isLoading$.pipe(
-    filter((loading) => !loading),
-    distinctUntilChanged(),
-    switchMap(() =>
-      // To track the value of isAuthenticated over time, we need to merge:
-      //  - the current value
-      //  - the value whenever the access token changes. (this should always be true of there is an access token
-      //    but it is safer to pass this through this.AuthClient.isAuthenticated() nevertheless)
-      //  - the value whenever refreshState$ emits
-      merge(
-        defer(() => this.logtoClient.isAuthenticated()),
-        this.accessTokenTrigger$.pipe(mergeMap(() => this.logtoClient.isAuthenticated())),
-        this.refreshSubject$.pipe(mergeMap(() => this.logtoClient.isAuthenticated())),
-      ),
-    ),
-  );
-
-  /**
-   * Emits boolean values indicating the authentication state of the user. If `true`, it means a user has authenticated.
-   * This depends on the value of `isLoading$`, so there is no need to manually check the loading state of the SDK.
-   */
-  public readonly isAuthenticated$ = this.isAuthenticatedTrigger$.pipe(distinctUntilChanged(), shareReplay(1));
-
-  /**
-   * Emits details about the authenticated user, or null if not authenticated.
-   */
-  public readonly user$ = this.isAuthenticatedTrigger$.pipe(
-    concatMap((authenticated) =>
-      authenticated ? (this.logtoClient.fetchUserInfo() as Promise<UserAuthState>) : of(null),
-    ),
-    distinctUntilChanged(),
-  );
-
-  /**
-   * Emits ID token claims when authenticated, or null if not authenticated.
-   */
-  public readonly idTokenClaims$ = this.isAuthenticatedTrigger$.pipe(
-    concatMap((authenticated) => (authenticated ? this.logtoClient.getIdTokenClaims() : of(null))),
-  );
-
-  /**
-   * Emits errors that occur during login, or when checking for an active session on startup.
-   */
   public readonly error$ = this.errorSubject$.asObservable();
+  public readonly isAuthenticated$: Observable<boolean>;
+  public readonly userInfo$: Observable<AuthUserState | null>;
 
-  /**
-   * Emits the value (if any) that was passed to the `loginWithRedirect` method call
-   * but only **after** `handleRedirectCallback` is first called
-   */
-  public readonly appState$ = this.appStateSubject$.asObservable();
+  constructor() {
+    const isAuthenticated$ = this.authSyncTrigger$.pipe(
+      switchMap(() => this.logtoClient.isAuthenticated()),
+      catchError((error) => {
+        this.error = error;
+        return of(false)
+      }),
+    );
 
-  /**
-   * Update the isLoading state using the provided value
-   *
-   * @param isLoading The new value for isLoading
-   */
-  public set isLoading(isLoading: boolean) {
-    this.isLoadingSubject$.next(isLoading);
+    this.userInfo$ = isAuthenticated$.pipe(
+      switchMap((isAuthenticated) => isAuthenticated ?
+        this.logtoClient.fetchUserInfo() :
+        of(null)
+      ),
+      catchError((error) => {
+        this.error = error;
+        return of(null);
+      }),
+      shareReplay(1),
+    );
+
+    this.isAuthenticated$ = this.userInfo$.pipe(
+      map((userInfo) => !!userInfo),
+      distinctUntilChanged(),
+      shareReplay(1)
+    );
+
+    this.shouldHandleCallback().pipe(
+      switchMap((isCallback) => isCallback ? this.handleSignInCallback(this.window.location.href) as Observable<any> : of(undefined)),
+      takeUntilDestroyed(this.destoryRef),
+    ).subscribe(this.initSubject$);
+
+    this.error$.pipe(
+      takeUntilDestroyed(this.destoryRef),
+    ).subscribe((error) => {
+      console.error('Auth error:', error);
+    });
   }
 
-  /**
-   * Refresh the state to ensure the `isAuthenticated`, `user$` and `idTokenClaims$`
-   * reflect the most up-to-date values from  AuthClient.
-   */
   public refresh(): void {
     this.refreshSubject$.next();
   }
 
-  /**
-   * Update the access token, doing so will also refresh the state.
-   *
-   * @param accessToken The new Access Token
-   */
-  public set accessToken(accessToken: string) {
-    this.accessTokenSubject$.next(accessToken);
-  }
-
-  /**
-   * Emits the error in the `error$` observable.
-   *
-   * @param error The new error
-   */
   public set error(error: any) {
     this.errorSubject$.next(error);
   }
@@ -223,16 +130,9 @@ export class AuthService<TAppState extends AppState = AppState> {
     return throwError(() => new Error('not implemented'));
   }
 
-  handleSignInCallback(callbackUrl?: string) {
-    return defer(() => this.logtoClient.handleSignInCallback(callbackUrl || this.window.location.href)).pipe(
+  handleSignInCallback(callbackUrl: string) {
+    return from(this.logtoClient.handleSignInCallback(callbackUrl)).pipe(
       switchMap(() => this.logtoClient.isAuthenticated()),
-      withLatestFrom(this.isLoading$),
-      tap(([_, isLoading]) => {
-        if (!isLoading) {
-          this.refresh();
-        }
-      }),
-      map(([result]) => result),
       tap((signInCallbackResult) => {
         let authCallbackOriginUri = '/';
         try {
@@ -241,42 +141,59 @@ export class AuthService<TAppState extends AppState = AppState> {
           }
           localStorage.removeItem(AUTH_CALLBACK_ORIGIN_URI_KEY)
         } catch (e) {
+          this.error = e;
           console.error('Failed to load origin URL in local storage.', e);
         }
         this.router.navigateByUrl(authCallbackOriginUri, { replaceUrl: true });
         return signInCallbackResult;
+      }),
+      catchError((error) => {
+        this.router.navigateByUrl('/', { replaceUrl: true });
+        this.error = error;
+        return of(false);
       })
     );
   }
 
   protected shouldHandleCallback(): Observable<boolean> {
-    return from(this.logtoClient.isSignInRedirected(this.window.location.href));
+    return from(this.logtoClient.isSignInRedirected(this.window.location.href))
+      .pipe(
+        catchError((error) => {
+          this.error = error;
+          return of(false);
+        })
+      );
   }
 
   getResourceToken(resource: string): Observable<string | null> {
     return from(this.logtoClient.getAccessToken(resource))
-    .pipe(
-      catchError(() => of(null))
-    );
+      .pipe(
+        catchError((error) => {
+          this.error = error;
+          return of(null);
+        })
+      );
   }
 
-  getTokenClaims({
-    resources = [],
-  }: {
-    resources: string[] | undefined;
-  }): Observable<{ id: IdTokenClaims; resources: AccessTokenClaims[] } | null> {
+  getResourcesClaims(resourcesConfigs: AuthResourceConfig[]): Observable<{ configs: AuthResourceConfig[], resources: AccessTokenClaims[] } | null> {
     return this.isAuthenticated$.pipe(
       switchMap((isAuth) => {
         if (!isAuth) {
           return of(null);
         }
-        return forkJoin([
-          from(this.logtoClient.getIdTokenClaims()),
-          ...resources.map((r) => from(this.logtoClient.getAccessTokenClaims(r))),
-        ]).pipe(
-          map(([idClaims, ...resourceClaims]) => {
+        return forkJoin(resourcesConfigs.map((r) =>
+          from(
+            this.logtoClient.getAccessTokenClaims(r.resource)
+          ).pipe(
+            catchError((error) => {
+              this.error = error;
+              return of({} as AccessTokenClaims);
+            })
+          )
+        )).pipe(
+          map((resourceClaims) => {
             return {
-              id: idClaims,
+              configs: resourcesConfigs,
               resources: resourceClaims,
             };
           }),
@@ -285,15 +202,13 @@ export class AuthService<TAppState extends AppState = AppState> {
     );
   }
 
-  canActivate({
-    scopes: expectedScopes,
-    resources,
-    originUrlToBase,
-  }: {
-    resources: string[];
-    scopes: RegExp[];
-    originUrlToBase?: string;
-  }): (route: ActivatedRouteSnapshot, state: RouterStateSnapshot) => Observable<boolean> {
+  canActivate(
+    resourcesConfigs: AuthResourceConfig[],
+    {
+      originUrlToBase,
+    }: {
+      originUrlToBase?: string;
+    } = {}): (route: ActivatedRouteSnapshot, state: RouterStateSnapshot) => Observable<boolean> {
     return (_route, state) => {
       const originUrl = originUrlToBase ?? state.url;
       return this.isAuthenticated$.pipe(
@@ -302,24 +217,22 @@ export class AuthService<TAppState extends AppState = AppState> {
             return of(true);
           }
 
-          const redirectUrl = new URL(this.document.baseURI);
-          redirectUrl.pathname = '/auth/callback';
+          const redirectUrl = new URL(`${environment.ORIGIN}${AUTH_CALLBACK_PATH}`);
 
           try {
             localStorage.setItem(AUTH_CALLBACK_ORIGIN_URI_KEY, originUrl);
           } catch (e) {
             console.error('Failed to store origin URL in local storage.', e);
           }
-    
+
           return from(this.signIn({ redirectUrl: redirectUrl.toString(), signInType: 'redirect' })).pipe(switchMap(() => EMPTY));
         }),
         switchMap((_isAuth) => {
-          return this.getTokenClaims({
-            resources,
-          }).pipe(
+          return this.getResourcesClaims(resourcesConfigs).pipe(
             map((clms) => {
-              const actualScopes = (clms?.resources || []).map((c) => c.scope || '');
-              return expectedScopes.length === 0 || expectedScopes.every((s) => actualScopes.some((as) => s.test(as)));
+              const expectedScopes = resourcesConfigs.flatMap((c) => c.scopes);
+              const actualScopes = new Set((clms?.resources || []).flatMap((c) => parseScope(c?.scope)));
+              return expectedScopes.length === 0 || expectedScopes.every((e) => actualScopes.has(e));
             }),
           );
         }),

@@ -129,7 +129,7 @@ export class DashboardComponent implements OnInit {
     return 'not active';
   }
 
-  getSeverity(_item: ConfluenceDto) {
+  getSeverity(_item: ConfluenceDto): 'info' {
     return 'info';
   }
 

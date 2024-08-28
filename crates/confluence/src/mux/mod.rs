@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::clash::{ClashConfig, Proxy, ProxyGroup, ProxyGroupKind, Rule};
 use crate::clash::utils::{parse_server_tld, ServerTld};
+use crate::clash::{ClashConfig, Proxy, ProxyGroup, ProxyGroupKind, Rule};
 
 const PROXY_SLOT: &str = "<mux>";
 
@@ -23,8 +23,7 @@ pub fn mux_configs(
         for p in &config.proxies {
             {
                 // resolve proxy server root domain
-                let proxy_server_root =
-                    parse_server_tld(&name, p.server())?;
+                let proxy_server_root = parse_server_tld(name, p.server())?;
                 proxy_servers.insert(proxy_server_root);
             }
 
@@ -66,22 +65,20 @@ pub fn mux_configs(
     }
 
     {
-        mux_rules.extend(
-            proxy_servers
-                .into_iter()
-                .map(|s| Rule({
-                    match s {
-                        ServerTld::Tld(domain) => format!("DOMAIN-SUFFIX,{},DIRECT", domain),
-                        ServerTld::Ip(ip) => {
-                            if ip.is_ipv6() {
-                                format!("IP-CIDR6,{}/128,DIRECT", ip.to_string())
-                            } else {
-                                format!("IP-CIDR,{}/32,DIRECT", ip.to_string())
-                            }
+        mux_rules.extend(proxy_servers.into_iter().map(|s| {
+            Rule({
+                match s {
+                    ServerTld::Tld(domain) => format!("DOMAIN-SUFFIX,{},DIRECT", domain),
+                    ServerTld::Ip(ip) => {
+                        if ip.is_ipv6() {
+                            format!("IP-CIDR6,{}/128,DIRECT", ip)
+                        } else {
+                            format!("IP-CIDR,{}/32,DIRECT", ip)
                         }
                     }
-                })),
-        );
+                }
+            })
+        }));
         mux_rules.extend_from_slice(rules);
     }
 
@@ -113,13 +110,13 @@ mod tests {
 
         let config_res = mux_configs(&config_tmpl, &sources)?;
 
-//         let expected_rules: Vec<Rule> = serde_yaml::from_str(
-//             r"
-// - DOMAIN-SUFFIX,proxy1.com,DIRECT
-// - DOMAIN-SUFFIX,proxy2.com,DIRECT
-// - DOMAIN-SUFFIX,google.com,Proxy
-//         ",
-//         )?;
+        //         let expected_rules: Vec<Rule> = serde_yaml::from_str(
+        //             r"
+        // - DOMAIN-SUFFIX,proxy1.com,DIRECT
+        // - DOMAIN-SUFFIX,proxy2.com,DIRECT
+        // - DOMAIN-SUFFIX,google.com,Proxy
+        //         ",
+        //         )?;
 
         let expected_proxies: Vec<String> = serde_yaml::from_str(
             r#"
@@ -132,10 +129,7 @@ mod tests {
         "#,
         )?;
 
-        assert!(&config_res
-            .proxy_groups
-            .iter()
-            .any(|p| p.name == "proxy1"));
+        assert!(&config_res.proxy_groups.iter().any(|p| p.name == "proxy1"));
         assert_eq!(
             &config_res
                 .proxy_groups

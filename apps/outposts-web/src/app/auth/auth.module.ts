@@ -15,7 +15,6 @@ import { AuthRoutingModule } from './auth-routing.module';
       multi: true,
       useFactory: (authService: AuthService) => {
         return () => {
-          authService.isLoading = true;
           return authService.isAuthenticated$.pipe(
             take(1)
           )
@@ -29,4 +28,4 @@ import { AuthRoutingModule } from './auth-routing.module';
     AuthRoutingModule
   ],
 })
-export class AuthModule {}
+export class AuthModule { }
