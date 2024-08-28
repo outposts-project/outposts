@@ -1,4 +1,4 @@
-import { DefinePlugin } from 'webpack';
+import { EnvironmentPlugin } from 'webpack';
 import dotenv from 'dotenv';
 import path from 'path';
 import { version } from './package.json';
@@ -35,10 +35,12 @@ console.log(
 
 if (
   !process.env['AUTH_TYPE'] ||
+  !process.env['OUTPOSTS_WEB_ORIGIN'] ||
   !process.env['CONFLUENCE_API_ENDPOINT'] ||
   !process.env['AUTH_ENDPOINT']
 ) {
-  throw 'missing required envs';
+  console.error('missing required envs');
+  process.exit(1);
 }
 
 export default (
@@ -48,17 +50,14 @@ export default (
 ) => {
   const plugins = config.plugins ?? [];
   plugins.push(
-    new DefinePlugin({
-      'process.env.AUTH_TYPE': JSON.stringify(process.env['AUTH_TYPE']),
-      'process.env.AUTH_ENDPOINT': JSON.stringify(process.env['AUTH_ENDPOINT']),
-      'process.env.OUTPOSTS_WEB_AUTH_APPID': JSON.stringify(
-        process.env['OUTPOSTS_WEB_AUTH_APPID']
-      ),
-      'process.env.APP_VERSION': JSON.stringify(version),
-      'process.env.CONFLUENCE_API_ENDPOINT': JSON.stringify(
-        process.env['CONFLUENCE_API_ENDPOINT']
-      ),
-    })
+    new EnvironmentPlugin({
+      APP_VERSION: version,
+      AUTH_TYPE: process.env['AUTH_TYPE'],
+      AUTH_ENDPOINT: process.env['AUTH_ENDPOINT'],
+      OUTPOSTS_WEB_ORIGIN: process.env['OUTPOSTS_WEB_ORIGIN'],
+      OUTPOSTS_WEB_AUTH_APPID: process.env['OUTPOSTS_WEB_AUTH_APPID'],
+      CONFLUENCE_API_ENDPOINT: process.env['CONFLUENCE_API_ENDPOINT'],
+    } as any)
   );
   config.plugins = plugins;
 
