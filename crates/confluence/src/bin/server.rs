@@ -108,6 +108,10 @@ async fn main() -> Result<(), AppError> {
     Ok(())
 }
 
+async fn handle_health() -> (StatusCode, &'static str) {
+    (StatusCode::OK, "OK")
+}
+
 async fn handle_404() -> (StatusCode, &'static str) {
     (StatusCode::NOT_FOUND, "Not found")
 }
@@ -141,12 +145,15 @@ fn handle_confluence(state: Arc<AppState>) -> Router {
 
     let profile_token_api = Router::<Arc<AppState>>::new()
         .route("/:token", get(find_one_profile_as_subscription_by_token));
+    
+    let health_api = Router::<Arc<AppState>>::new().route("/", get(handle_health));
 
     Router::<Arc<AppState>>::new()
         .nest("/api/profile", profile_api)
         .nest("/api/confluence", confluence_api)
         .nest("/api/subscribe_source", subscribe_source_api)
         .nest("/api/profile_token", profile_token_api)
+        .nest("/api/health", health_api)
         .fallback_service(handle_404.into_service())
         .with_state(state)
 }
