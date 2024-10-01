@@ -35,8 +35,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    image: svhd/logto:${TAG-latest}
-    entrypoint: ['sh', '-c', 'npm run cli db seed -- --swe && npm start']
+    image: svhd/logto:latest
+    entrypoint: ['sh', '-c', 'npm run cli db alteration deploy latest && npm run cli db seed -- --swe && npm start']
     ports:
       - 9001:3001
       - 9002:3002
