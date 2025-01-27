@@ -12,8 +12,7 @@ use confluence::services::{
     create_one_confluence, create_one_profile, create_one_subscribe_source, delete_one_confluence,
     delete_one_profile, delete_one_subscribe_source, find_many_confluences, find_one_confluence,
     find_one_profile_as_subscription_by_token, mux_one_confluence, sync_one_confluence,
-    update_one_confluence, update_one_confluence_cron,
-    update_one_subscribe_source, AppState,
+    update_one_confluence, update_one_confluence_cron, update_one_subscribe_source, AppState,
 };
 use confluence::tasks::init_backend_jobs;
 use sea_orm::{ConnectOptions, Database};
@@ -30,15 +29,13 @@ use tracing_subscriber::EnvFilter;
 #[tokio::main]
 async fn main() -> Result<(), AppError> {
     tracing_subscriber::fmt::fmt()
-        .with_env_filter(
-            EnvFilter::try_from_default_env().unwrap_or_else(|_| {
-                if cfg!(debug_assertions) || cfg!(test) {
-                    EnvFilter::new("debug")
-                } else {
-                    EnvFilter::new("info")
-                }
-            }),
-        )
+        .with_env_filter(EnvFilter::try_from_default_env().unwrap_or_else(|_| {
+            if cfg!(debug_assertions) || cfg!(test) {
+                EnvFilter::new("debug")
+            } else {
+                EnvFilter::new("info")
+            }
+        }))
         .init();
 
     dotenvy::dotenv().ok();
@@ -120,32 +117,32 @@ fn handle_confluence(state: Arc<AppState>) -> Router {
     let confluence_api = Router::<Arc<AppState>>::new()
         .route("/", get(find_many_confluences).post(create_one_confluence))
         .route(
-            "/:id",
+            "/{id}",
             get(find_one_confluence)
                 .delete(delete_one_confluence)
                 .put(update_one_confluence),
         )
-        .route("/mux/:id", post(mux_one_confluence))
-        .route("/sync/:id", post(sync_one_confluence))
-        .route("/cron/:id", post(update_one_confluence_cron))
+        .route("/mux/{id}", post(mux_one_confluence))
+        .route("/sync/{id}", post(sync_one_confluence))
+        .route("/cron/{id}", post(update_one_confluence_cron))
         .layer(middleware::from_fn_with_state(state.clone(), auth));
 
     let profile_api = Router::<Arc<AppState>>::new()
         .route("/", post(create_one_profile))
-        .route("/:id", delete(delete_one_profile))
+        .route("/{id}", delete(delete_one_profile))
         .layer(middleware::from_fn_with_state(state.clone(), auth));
 
     let subscribe_source_api = Router::<Arc<AppState>>::new()
         .route("/", post(create_one_subscribe_source))
         .route(
-            "/:id",
+            "/{id}",
             put(update_one_subscribe_source).delete(delete_one_subscribe_source),
         )
         .layer(middleware::from_fn_with_state(state.clone(), auth));
 
     let profile_token_api = Router::<Arc<AppState>>::new()
-        .route("/:token", get(find_one_profile_as_subscription_by_token));
-    
+        .route("/{token}", get(find_one_profile_as_subscription_by_token));
+
     let health_api = Router::<Arc<AppState>>::new().route("/", get(handle_health));
 
     Router::<Arc<AppState>>::new()

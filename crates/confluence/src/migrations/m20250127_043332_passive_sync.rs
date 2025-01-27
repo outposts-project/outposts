@@ -1,5 +1,6 @@
-use super::defs::Confluence;
 use sea_orm_migration::prelude::*;
+
+use super::defs::SubscribeSource;
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -10,12 +11,9 @@ impl MigrationTrait for Migration {
         manager
             .alter_table(
                 Table::alter()
-                    .table(Confluence::Table)
+                    .table(SubscribeSource::Table)
                     .add_column_if_not_exists(
-                        ColumnDef::new(Confluence::UserAgent)
-                            .text()
-                            .not_null()
-                            .default(""),
+                        ColumnDef::new(SubscribeSource::PassiveSync).boolean(),
                     )
                     .to_owned(),
             )
@@ -27,8 +25,8 @@ impl MigrationTrait for Migration {
         manager
             .alter_table(
                 Table::alter()
-                    .table(Confluence::Table)
-                    .drop_column(Confluence::UserAgent)
+                    .table(SubscribeSource::Table)
+                    .drop_column(SubscribeSource::PassiveSync)
                     .to_owned(),
             )
             .await?;

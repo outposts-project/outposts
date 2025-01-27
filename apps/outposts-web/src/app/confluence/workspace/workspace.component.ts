@@ -34,6 +34,7 @@ import { ClipboardService } from '@app/clipboard/clipboard.service';
 import { QrcodeService } from '@app/qrcode/qrcode.service';
 import { AppOverlayService } from '@app/core/servces/app-overlay.service';
 import { hourPlusLevelCronExprValidator } from '../validators/cron-expr.validators';
+import { SelectButton } from 'primeng/selectbutton'
 
 @Component({
   selector: 'confluence-workspace',
@@ -345,7 +346,10 @@ import { hourPlusLevelCronExprValidator } from '../validators/cron-expr.validato
         >
           {{ item.key }}
         </label>
-        <input
+        @if (item.key === 'passive_sync') {
+          <p-selectbutton [options]="booleanCheckboxLikeSelectButtonOptions" [formControlName]="item.key" optionLabel="label" optionValue="value" id="subscribe-source-creation-{{ item.key }}"/>
+        } @else {
+          <input
           class="mt-2"
           [ngClass]="{
             'ng-invalid': item.value.invalid,
@@ -357,6 +361,7 @@ import { hourPlusLevelCronExprValidator } from '../validators/cron-expr.validato
           [formControlName]="item.key"
           autocomplete="off"
         />
+        }
         }
         <div class="flex justify-content-end gap-2 mt-4">
           <p-button
@@ -472,18 +477,23 @@ import { hourPlusLevelCronExprValidator } from '../validators/cron-expr.validato
         >
           {{ item.key }}
         </label>
-        <input
-          class="mt-2"
-          [ngClass]="{
-            'ng-invalid': item.value.invalid,
-            'ng-dirty': item.value.touched
-          }"
-          type="text"
-          id="subscribe-source-creation-{{ item.key }}"
-          pInputText
-          [formControlName]="item.key"
-          autocomplete="off"
-        />
+        @if (item.key === 'passive_sync') {
+          <p-selectbutton [options]="booleanCheckboxLikeSelectButtonOptions" [formControlName]="item.key" optionLabel="label" optionValue="value" id="subscribe-source-creation-{{ item.key }}"/>
+        } @else {
+          <input
+            class="mt-2"
+            [ngClass]="{
+              'ng-invalid': item.value.invalid,
+              'ng-dirty': item.value.touched
+            }"
+            type="text"
+            id="subscribe-source-creation-{{ item.key }}"
+            pInputText
+            [formControlName]="item.key"
+            autocomplete="off"
+          />
+        }
+        
         }
         <div class="flex justify-content-end gap-2 mt-4">
           <p-button
@@ -603,12 +613,16 @@ export class WorkspaceComponent implements OnInit {
     };
   protected readonly qrcodeService = inject(QrcodeService);
 
+
   confluence$ = new BehaviorSubject<ConfluenceDto | undefined>(undefined);
   confluenceName$ = this.confluence$.pipe(
     map((c) => `${c?.name ?? ''}`.toLocaleUpperCase())
   );
   tmpl = '';
   profiles: ProfileDto[] = [];
+  booleanCheckboxLikeSelectButtonOptions = [
+    { label: 'Common', value: "false" }, { label: 'Passive', value: "true" }
+  ];
   subscribeSources: SubscribeSourceDto[] = [];
   subscribeSourceCreation?: {
     value: {
@@ -617,6 +631,7 @@ export class WorkspaceComponent implements OnInit {
     form: FormGroup<{
       url: FormControl<string | null>;
       name: FormControl<string | null>;
+      passive_sync: FormControl<boolean | null>;
     }>;
   };
   subscribeSourceUpdate?: {
@@ -626,6 +641,7 @@ export class WorkspaceComponent implements OnInit {
     form: FormGroup<{
       url: FormControl<string | null>;
       name: FormControl<string | null>;
+      passive_sync: FormControl<boolean | null>;
     }>;
   };
   configContentPreview?: {
@@ -803,6 +819,7 @@ export class WorkspaceComponent implements OnInit {
             form: this.fb.group({
               url: ['', [Validators.required, RxwebValidators.url()]],
               name: ['', Validators.required],
+              passive_sync: []
             }),
           };
         }),
@@ -858,6 +875,7 @@ export class WorkspaceComponent implements OnInit {
       form: this.fb.group({
         url: [item.url, [Validators.required, RxwebValidators.url()]],
         name: [item.name, Validators.required],
+        passive_sync: [!!item.passive_sync]
       }),
     };
   }

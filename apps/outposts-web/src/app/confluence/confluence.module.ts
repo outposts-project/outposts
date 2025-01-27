@@ -9,6 +9,7 @@ import { DataViewModule } from 'primeng/dataview';
 import { TagModule } from 'primeng/tag';
 import { ConfluenceService } from './confluence.service';
 import { ButtonModule } from 'primeng/button';
+import { SelectButtonModule } from 'primeng/selectbutton';
 import { CardModule } from 'primeng/card';
 import { AvatarModule } from 'primeng/avatar';
 import { FieldsetModule } from 'primeng/fieldset';
@@ -46,6 +47,7 @@ import { BreadcrumbModule } from 'primeng/breadcrumb';
     ClipboardModule,
     QrcodeModule,
     SkeletonModule,
+    SelectButtonModule
   ],
 })
-export class ConfluenceModule {}
+export class ConfluenceModule { }

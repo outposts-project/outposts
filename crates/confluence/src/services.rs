@@ -87,6 +87,17 @@ pub async fn find_certain_confluence_profiles_and_subscribe_sources(
     .map_err(AppError::from)
 }
 
+pub(crate) async fn passive_sync_one_subscribe_source_with_url(
+    sm: subscribe_source::Model,
+    ua: &str,
+    db: &DatabaseConnection,
+) -> Result<subscribe_source::Model, AppError> {
+    if sm.passive_sync.is_none_or(|ps| !ps) {
+        return Ok(sm);
+    }
+    sync_one_subscribe_source_with_url(sm, ua, db).await
+}
+
 pub async fn sync_one_subscribe_source_with_url(
     sm: subscribe_source::Model,
     ua: &str,
@@ -260,7 +271,7 @@ pub async fn sync_one_confluence(
 
     let sms = try_join_all(
         sms.into_iter()
-            .map(|sm| sync_one_subscribe_source_with_url(sm, ua, db)),
+            .map(|sm| passive_sync_one_subscribe_source_with_url(sm, ua, db)),
     )
     .await?;
 
@@ -477,6 +488,7 @@ pub async fn create_one_subscribe_source(
         url: Set(subscribe_creation_dto.url),
         name: Set(subscribe_creation_dto.name),
         content: Set(String::new()),
+        passive_sync: Set(subscribe_creation_dto.passive_sync),
         ..Default::default()
     };
     pms = pms.save(db).await?;
@@ -508,6 +520,9 @@ pub async fn update_one_subscribe_source(
         if let Some(content) = subscribe_update_dto.content {
             pam.content = Set(content);
         }
+        if let Some(passive_sync) = subscribe_update_dto.passive_sync {
+            pam.passive_sync = Set(Some(passive_sync));
+        };
         let pam = pam.save(db).await?;
         let pm = pam.try_into_model()?;
         Ok(Json(pm.into()))

@@ -6,7 +6,7 @@ mod m20240130_083647_subscribe_source_add_details;
 mod m20240130_131930_add_updated_at_triggers;
 mod m20240201_061359_cron_confluence_sync_and_mux;
 mod m20240213_092818_custom_ua;
-
+mod m20250127_043332_passive_sync;
 
 pub struct Migrator;
 
@@ -18,7 +18,8 @@ impl MigratorTrait for Migrator {
             Box::new(m20240130_083647_subscribe_source_add_details::Migration),
             Box::new(m20240130_131930_add_updated_at_triggers::Migration),
             Box::new(m20240201_061359_cron_confluence_sync_and_mux::Migration),
-            Box::new(m20240213_092818_custom_ua::Migration)
+            Box::new(m20240213_092818_custom_ua::Migration),
+            Box::new(m20250127_043332_passive_sync::Migration),
         ]
     }
 }

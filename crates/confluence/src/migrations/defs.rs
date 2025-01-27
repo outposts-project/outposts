@@ -47,10 +47,11 @@ pub enum SubscribeSource {
     SubDownload,
     SubTotal,
     SubExpire,
+    PassiveSync,
 }
 
-pub async fn create_postgres_auto_update_ts_fn<'a>(
-    manager: &SchemaManager<'a>,
+pub async fn create_postgres_auto_update_ts_fn(
+    manager: &SchemaManager<'_>,
     col_name: &str,
 ) -> Result<(), DbErr> {
     let sql = format!(
@@ -71,8 +72,8 @@ pub async fn create_postgres_auto_update_ts_fn<'a>(
     Ok(())
 }
 
-pub async fn create_postgres_auto_update_ts_trigger<'a>(
-    manager: &SchemaManager<'a>,
+pub async fn create_postgres_auto_update_ts_trigger(
+    manager: &SchemaManager<'_>,
     col_name: &str,
     tab_name: &str,
 ) -> Result<(), DbErr> {
@@ -86,8 +87,8 @@ pub async fn create_postgres_auto_update_ts_trigger<'a>(
     Ok(())
 }
 
-pub async fn drop_postgres_auto_update_ts_fn<'a>(
-    manager: &SchemaManager<'a>,
+pub async fn drop_postgres_auto_update_ts_fn(
+    manager: &SchemaManager<'_>,
     col_name: &str,
 ) -> Result<(), DbErr> {
     let sql = format!("DROP FUNCTION IF EXISTS update_{col_name}_column();");
@@ -98,8 +99,8 @@ pub async fn drop_postgres_auto_update_ts_fn<'a>(
     Ok(())
 }
 
-pub async fn drop_postgres_auto_update_ts_trigger<'a>(
-    manager: &SchemaManager<'a>,
+pub async fn drop_postgres_auto_update_ts_trigger(
+    manager: &SchemaManager<'_>,
     col_name: &str,
     tab_name: &str,
 ) -> Result<(), DbErr> {

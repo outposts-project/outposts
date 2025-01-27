@@ -1,13 +1,13 @@
 import { EnvironmentPlugin } from 'webpack';
 import dotenv from 'dotenv';
-import path from 'path';
+import path from 'node:path';
 import { version } from './package.json';
-import {
+import type {
   CustomWebpackBrowserSchema,
   TargetOptions,
 } from '@angular-builders/custom-webpack';
-import * as webpack from 'webpack';
-import fs from 'fs';
+import type * as webpack from 'webpack';
+import fs from 'node:fs';
 
 dotenv.config();
 dotenv.config({
@@ -34,10 +34,10 @@ console.log(
 );
 
 if (
-  !process.env['AUTH_TYPE'] ||
-  !process.env['OUTPOSTS_WEB_ORIGIN'] ||
-  !process.env['CONFLUENCE_API_ENDPOINT'] ||
-  !process.env['AUTH_ENDPOINT']
+  !process.env.AUTH_TYPE ||
+  !process.env.OUTPOSTS_WEB_ORIGIN ||
+  !process.env.CONFLUENCE_API_ENDPOINT ||
+  !process.env.AUTH_ENDPOINT
 ) {
   console.error('missing required envs');
   process.exit(1);
@@ -52,18 +52,18 @@ export default (
   plugins.push(
     new EnvironmentPlugin({
       APP_VERSION: version,
-      AUTH_TYPE: process.env['AUTH_TYPE'],
-      AUTH_ENDPOINT: process.env['AUTH_ENDPOINT'],
-      OUTPOSTS_WEB_ORIGIN: process.env['OUTPOSTS_WEB_ORIGIN'],
-      OUTPOSTS_WEB_AUTH_APPID: process.env['OUTPOSTS_WEB_AUTH_APPID'],
-      CONFLUENCE_API_ENDPOINT: process.env['CONFLUENCE_API_ENDPOINT'],
-    } as any)
+      AUTH_TYPE: process.env.AUTH_TYPE,
+      AUTH_ENDPOINT: process.env.AUTH_ENDPOINT,
+      OUTPOSTS_WEB_ORIGIN: process.env.OUTPOSTS_WEB_ORIGIN,
+      OUTPOSTS_WEB_AUTH_APPID: process.env.OUTPOSTS_WEB_AUTH_APPID,
+      CONFLUENCE_API_ENDPOINT: process.env.CONFLUENCE_API_ENDPOINT,
+    })
   );
   config.plugins = plugins;
 
   const rules = config.module?.rules || [];
 
-  rules.forEach((r) => {
+  for (const r of rules) {
     if (typeof r === 'object' && r && r.test instanceof RegExp) {
       const test = r.test;
       if (
@@ -76,7 +76,7 @@ export default (
         };
       }
     }
-  });
+  }
 
   rules.push({
     test: /\.md$/,
