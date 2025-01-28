@@ -221,3 +221,9 @@ index.d.ts.map
 /.angular
 /*.session.sql
 **/rustc-ice*
+.nx/cache
+.nx/workspace-data
+.angular
+
+vite.config.*.timestamp*
+vitest.config.*.timestamp*

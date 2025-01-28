@@ -1,27 +1,29 @@
-import { Component, inject, signal } from '@angular/core';
-import { AppConfigService } from './core/servces/app-config.service';
-import { DomHandler } from 'primeng/dom';
-import { AppOverlayService } from './core/servces/app-overlay.service';
+import { afterNextRender, Component } from '@angular/core';
+import { environment } from '@/environments/environment';
 
 @Component({
   selector: 'app-root',
-  templateUrl: './app.component.html',
-  styleUrl: './app.component.scss',
+  template: `<router-outlet></router-outlet>`,
+  standalone: false
 })
 export class AppComponent {
-  private readonly configService = inject(AppConfigService);
-  readonly overlayService = inject(AppOverlayService);
+  constructor(
+  ) {
+    afterNextRender(() => {
+      if (environment.production) {
+        this.injectScripts();
+      }
+      setTimeout(() => {
+        document.body.style.visibility = 'visible';
+        document.body.style.opacity = '1';
+      });
 
-  readonly title = 'outposts-web';
-
-  readonly colorSchema = signal('light');
-
-  get isMenuActive(): boolean {
-    return !!this.configService.state.menuActive;
+      this.bindRouteEvents();
+    });
   }
 
-  hideMenu() {
-    this.configService.hideMenu();
-    DomHandler.unblockBodyScroll('blocked-scroll');
+  injectScripts() {
   }
+
+  bindRouteEvents() { }
 }

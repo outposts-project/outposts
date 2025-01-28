@@ -3,7 +3,7 @@ import {
   TranslocoModule
 } from '@jsverse/transloco';
 import { NgModule } from '@angular/core';
-import { TranslocoConfig } from "@app/transloco-config";
+import { TranslocoConfig } from '@/app/transloco-config';
 
 @NgModule({
   exports: [TranslocoModule],
