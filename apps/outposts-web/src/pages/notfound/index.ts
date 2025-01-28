@@ -11,7 +11,7 @@ import { CommonModule } from '@angular/common';
             <div class="flex flex-col sm:flex-row items-baseline justify-center gap-6 text-primary">
                 <span class="font-bold text-9xl"> 4 </span>
                 <div class="flex items-center justify-center bg-primary text-primary-contrast rounded-full w-24 h-24">
-                    <img src="/image/logo-512.png" >
+                    <img src="/image/logo-512.png" alt="logo-512">
                 </div>
                 <span class="font-bold text-9xl"> 4 </span>
             </div>
@@ -20,4 +20,4 @@ import { CommonModule } from '@angular/common';
         </div>
     </div>`
 })
-export class NotFoundDemo { }
+export class NotFoundDemoComponent { }

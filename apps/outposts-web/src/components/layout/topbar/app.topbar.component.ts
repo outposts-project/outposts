@@ -15,10 +15,10 @@ import { StyleClass } from 'primeng/styleclass';
         <div class="layout-topbar-inner">
             <div class="layout-topbar-logo-container">
                 <a [routerLink]="['/']" class="layout-topbar-logo" aria-label="OUTPOSTS Logo">
-                    <img width="150" height="30" src="image/logo-512-w.png" />
+                    <img width="150" height="30" src="image/logo-512-w.png" alt="logo"/>
                 </a>
                 <a [routerLink]="['/']" class="layout-topbar-icon" aria-label="OUTPOSTS Logo">
-                    <img src="image/logo-512.png" />
+                    <img src="image/logo-512.png" alt="logo" />
                 </a>
             </div>
 

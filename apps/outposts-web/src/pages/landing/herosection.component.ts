@@ -19,7 +19,7 @@ import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TooltipModule } from 'primeng/tooltip';
 
 @Component({
-    selector: 'hero-section',
+    selector: 'app-hero-section',
     standalone: true,
     imports: [
         CommonModule,

@@ -17,7 +17,7 @@ import { SpinnerComponent } from '../spinner/spinner.component';
         <div class="layout-wrapper" [ngClass]="containerClass()">
             <app-news />
             <app-topbar />
-            <div class="layout-mask" [ngClass]="{ 'layout-mask-active': isMenuActive() }" (click)="hideMenu()"></div>
+            <div class="layout-mask" [ngClass]="{ 'layout-mask-active': isMenuActive() }" (click)="hideMenu()" tabindex="0" (keyup)="hideMenu()"></div>
             <div class="layout-content">
                 <app-menu />
                 <div class="layout-content-slot">

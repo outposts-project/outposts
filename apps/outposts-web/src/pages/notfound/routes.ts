@@ -1,8 +1,8 @@
-import { NotFoundDemo } from '.';
+import { NotFoundDemoComponent } from '.';
 
 export default [
     {
         path: '',
-        component: NotFoundDemo
+        component: NotFoundDemoComponent
     }
 ];

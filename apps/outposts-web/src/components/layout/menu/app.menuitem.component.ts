@@ -6,6 +6,7 @@ import { MenuItem } from './app.menu.component';
 import { Tag } from 'primeng/tag';
 
 @Component({
+    // eslint-disable-next-line
     selector: '[app-menuitem]',
     template: `
        @if (item) {
@@ -44,7 +45,7 @@ import { Tag } from 'primeng/tag';
 export class AppMenuItemComponent {
     @Input() item?: MenuItem;
 
-    @Input({ transform: booleanAttribute }) root: boolean = true;
+    @Input({ transform: booleanAttribute }) root = true;
 
     constructor(private router: Router) { }
 

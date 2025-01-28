@@ -9,5 +9,4 @@ import { QrcodeService } from './qrcode.service';
   imports: [CommonModule],
 })
 export class QrcodeModule {
-  constructor() {}
 }

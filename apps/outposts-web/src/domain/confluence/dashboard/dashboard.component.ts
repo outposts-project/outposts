@@ -7,7 +7,7 @@ import { AppOverlayService } from '@/core/servces/app-overlay.service';
 
 @Component({
   standalone: false,
-  selector: 'confluence-dashboard',
+  selector: 'app-confluence-dashboard',
   template: `
     <p-dataView #dv [value]="confluences()">
       <ng-template #emptymessage>

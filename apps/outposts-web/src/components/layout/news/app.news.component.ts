@@ -13,7 +13,7 @@ import { FormsModule } from '@angular/forms';
     imports: [CommonModule, FormsModule]
 })
 export class AppNewsComponent {
-    storageKey: string = 'outposts-banner-news';
+    storageKey = 'outposts-banner-news';
 
     announcement: any;
 

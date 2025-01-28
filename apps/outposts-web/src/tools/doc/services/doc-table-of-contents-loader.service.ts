@@ -23,7 +23,7 @@ export class DocTableOfContentsLoader {
     const headings = this.getHeadings(docElement);
     const tocList = headings.map((heading) => {
       return ({
-        id: heading.id!,
+        id: heading.id,
         level: heading.tagName.toLowerCase() as DocTableOfContentsLevel,
         title: this.getHeadingTitle(heading),
         top: this.calculateTop(heading)

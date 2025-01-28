@@ -44,10 +44,10 @@ export class DocSectionComponent implements OnInit {
   readonly ClipboardButtonComponent = DocClipboardButtonComponent;
 
   @Input()
-  skeleton: boolean = true;
+  skeleton = true;
 
   @Input()
-  lineNumbers: boolean = false;
+  lineNumbers = false;
 
   @Input('data')
   propData?: string;

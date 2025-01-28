@@ -9,10 +9,9 @@ import { FooterSectionComponent } from './footersection.component';
 import { HeroSectionComponent } from './herosection.component';
 import { ButtonModule } from 'primeng/button';
 import { ToastModule } from 'primeng/toast';
-import { SpinnerComponent } from "../../components/spinner/spinner.component";
 
 @Component({
-    selector: 'landing',
+    selector: 'app-landing',
     standalone: true,
     templateUrl: './landing.component.html',
     imports: [CommonModule, AppNewsComponent, AppTopBarComponent, ButtonModule, HeroSectionComponent, FooterSectionComponent, ToastModule]

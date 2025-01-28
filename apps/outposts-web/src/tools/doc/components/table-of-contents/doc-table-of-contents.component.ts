@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, computed, ElementRef, inject, Input, PLATFORM_ID } from "@angular/core";
+import { AfterViewInit, Component, computed, ElementRef, inject, Input } from "@angular/core";
 import { DocTableOfContentsSpy } from '@/tools/doc/services/doc-table-of-contents-spy.service';
 import { DocTableOfContentsLoader } from '@/tools/doc/services/doc-table-of-contents-loader.service';
 import { DocTableOfContentsItem, DocTableOfContentsLevel } from '@/tools/doc/defs/doc-table-of-contents.defs';

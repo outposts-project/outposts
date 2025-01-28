@@ -22,8 +22,9 @@ export class AppComponent {
     });
   }
 
-  injectScripts() {
-  }
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  injectScripts() { }
 
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   bindRouteEvents() { }
 }

@@ -1,17 +1,16 @@
 /**
  * source partial from [ngx-script-loader](https://github.com/muratcorlu/ngx-script-loader)
  */
-import {Injectable, Inject, inject} from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {
   BehaviorSubject, catchError,
   map,
   Observable,
-  of,
   tap
 } from 'rxjs';
-import {take, shareReplay} from 'rxjs/operators';
-import {DOCUMENT} from '@angular/common';
-import {HttpClient} from "@angular/common/http";
+import { take, shareReplay } from 'rxjs/operators';
+import { DOCUMENT } from '@angular/common';
+import { HttpClient } from "@angular/common/http";
 
 @Injectable({
   providedIn: 'root'
@@ -30,7 +29,7 @@ export class AppAssetService {
 
       if (attributes) {
         for (const key in attributes) {
-          if (attributes.hasOwnProperty(key)) {
+          if (Object.prototype.hasOwnProperty.call(attributes, key)) {
             script.setAttribute(key, attributes[key]);
           }
         }
@@ -64,7 +63,7 @@ export class AppAssetService {
 
       if (attributes) {
         for (const key in attributes) {
-          if (attributes.hasOwnProperty(key)) {
+          if (Object.prototype.hasOwnProperty.call(attributes, key)) {
             script.setAttribute(key, attributes[key]);
           }
         }
@@ -129,7 +128,7 @@ export class AppAssetService {
     );
   }
 
-  loadPlainText (url: string): Observable<string> {
+  loadPlainText(url: string): Observable<string> {
     return this.loaders[url] = this.loaders[url] || this._loadPlainText(url)
       .pipe(
         take(1),
@@ -142,7 +141,7 @@ export class AppAssetService {
       )
   }
 
-   isAssetLoaded$(url: string): Observable<boolean> {
+  isAssetLoaded$(url: string): Observable<boolean> {
     return this._getLoaded$(url)
       .pipe(
         map(loaded => !!loaded),

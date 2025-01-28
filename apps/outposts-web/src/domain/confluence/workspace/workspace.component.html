@@ -2,7 +2,7 @@
 <div class="card flex-1 min-w-0 mt-2">
     <p-fieldset class="flex-1 min-w-0 w-fit">
         <ng-template pTemplate="header">
-            <div class="flex items-center gap-2 px-2" style="cursor: pointer;" (click)="openUpdateNameDialog()">
+            <div class="flex items-center gap-2 px-2" style="cursor: pointer;" tabindex="0" (click)="openUpdateNameDialog()" (keyup)="openUpdateNameDialog()">
                 <span class="font-bold">{{(confluenceName$ | async)!}}</span>
             </div>
         </ng-template>
@@ -42,11 +42,11 @@
                             styleClass="dark:bg-surface-950">
                             <div>{{ item.name }}</div>
                             <div class="flex items-center justify-center gap-1 mt-2">
-                                <i class="pi pi-eye p-1 cursor-pointer"
-                                    (click)="openPreviewSubscribeSourceContentDialog(item)"></i>
-                                <i class="pi pi-file-edit p-1 cursor-pointer"
-                                    (click)="openUpdateSubscribeSourceDialog(item)"></i>
-                                <i class="pi pi-times p-1 cursor-pointer" (click)="removeSubscribeSource(item.id)"></i>
+                                <i class="pi pi-eye p-1 cursor-pointer" role="button" tabindex="0"
+                                    (click)="openPreviewSubscribeSourceContentDialog(item)" (keyup)="openPreviewSubscribeSourceContentDialog(item)"></i>
+                                <i class="pi pi-file-edit p-1 cursor-pointer" role="button" tabindex="0"
+                                    (click)="openUpdateSubscribeSourceDialog(item)" (keyup)="openUpdateSubscribeSourceDialog(item)"></i>
+                                <i class="pi pi-times p-1 cursor-pointer" role="button" tabindex="0" (click)="removeSubscribeSource(item.id)" (keyup)="removeSubscribeSource(item.id)"></i>
                             </div>
                             <div class="absolute rounded-full" [style]="{
                 background: item.content
@@ -100,8 +100,8 @@
                             {{ formatTime(item.updated_at, 'HH:mm') }}
                         </time>
                         <div class="flex items-center justify-center gap-1 mt-2">
-                            <i class="pi pi-copy p-1 cursor-pointer" (click)="copyProfileUrl(item)"></i>
-                            <i class="pi pi-times p-1 cursor-pointer" (click)="removeProfile(item.id)"></i>
+                            <i class="pi pi-copy p-1 cursor-pointer" tabindex="0" (click)="copyProfileUrl(item)" (keyup)="copyProfileUrl(item)"></i>
+                            <i class="pi pi-times p-1 cursor-pointer" tabindex="0" (click)="removeProfile(item.id)" (keyup)="removeProfile(item.id)"></i>
                         </div>
                     </p-card>
                     }
@@ -254,7 +254,7 @@
 <p-dialog header="Preview Profile Content" [visible]="true" (visibleChange)="cancelUrlPreviewDialog()" [modal]="true"
     [style]="{ width: '50vw', minWidth: '300px' }" [draggable]="false" [resizable]="false" [baseZIndex]="100">
     <div class="flex flex-col">
-        <a class="px-link profile-url" (click)="copyUrl(urlPreview.url)">
+        <a class="px-link profile-url" tabindex="0" (click)="copyUrl(urlPreview.url)" (keyup)="copyUrl(urlPreview.url)">
             {{ urlPreview.url }}
         </a>
         @if (urlPreview.qrcodeDataUrl) {

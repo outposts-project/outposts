@@ -40,7 +40,7 @@ import { AppConfigService } from '@/core/servces/app-config.service';
 
 @Component({
   standalone: false,
-  selector: 'confluence-workspace',
+  selector: 'app-confluence-workspace',
   templateUrl: './workspace.component.html',
   styles: `
     :host ::ng-deep {

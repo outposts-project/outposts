@@ -11,5 +11,4 @@ import { ClipboardService } from './clipboard.service';
   ],
 })
 export class ClipboardModule {
-  constructor() {}
 }

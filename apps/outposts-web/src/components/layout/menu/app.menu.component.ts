@@ -3,9 +3,7 @@ import { AppConfigService } from '@/core/servces/app-config.service';
 import { CommonModule } from '@angular/common';
 import { afterNextRender, Component, computed, ElementRef, OnDestroy } from '@angular/core';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
-import { AutoComplete } from 'primeng/autocomplete';
 import { DomHandler } from 'primeng/dom';
-import { StyleClass } from 'primeng/styleclass';
 import { Subscription } from 'rxjs';
 import { AppMenuItemComponent } from './app.menuitem.component';
 
@@ -63,7 +61,7 @@ export class AppMenuComponent implements OnDestroy {
     }
 
     scrollToActiveItem() {
-        let activeItem = DomHandler.findSingle(this.el.nativeElement, '.router-link-active');
+        const activeItem = DomHandler.findSingle(this.el.nativeElement, '.router-link-active');
         if (activeItem && !this.isInViewport(activeItem)) {
             activeItem.scrollIntoView({ block: 'center' });
         }

@@ -10,7 +10,8 @@
     "dev": "npm-run-all -p dev:proxy dev:outposts-web",
     "dev:proxy": "npm run start -w dev-proxy",
     "dev:outposts-web": "nx serve outposts-web",
-    "build:outposts-web": "nx build outposts-web"
+    "build:outposts-web": "nx build outposts-web",
+    "lint:outposts-web": "nx lint outposts-web"
   },
   "repository": {
     "type": "git",

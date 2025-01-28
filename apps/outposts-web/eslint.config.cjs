@@ -16,6 +16,7 @@ module.exports = [
           style: 'camelCase',
         },
       ],
+      '@angular-eslint/prefer-standalone': 'off',
       '@angular-eslint/component-selector': [
         'error',
         {
@@ -23,6 +24,21 @@ module.exports = [
           prefix: 'app',
           style: 'kebab-case',
         },
+      ],
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/ban-ts-comment': 'off',
+      '@angular-eslint/no-input-rename': 'warn',
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          "args": "all",
+          "argsIgnorePattern": "^_",
+          "caughtErrors": "all",
+          "caughtErrorsIgnorePattern": "^_",
+          "destructuredArrayIgnorePattern": "^_",
+          "varsIgnorePattern": "^_",
+          "ignoreRestSiblings": true
+        }
       ],
     },
   },
