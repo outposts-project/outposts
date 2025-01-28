@@ -21,8 +21,8 @@ import { SpinnerComponent } from '../spinner/spinner.component';
             <div class="layout-content">
                 <app-menu />
                 <div class="layout-content-slot">
-                    <p-toast [baseZIndex]="999" />
-                    <router-outlet></router-outlet>
+                    <p-toast [baseZIndex]="9999" />
+                    <router-outlet></router-outlet> 
                 </div>
             </div>
             <app-footer />

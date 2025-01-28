@@ -13,6 +13,7 @@ import {
   shareReplay,
   tap,
   skip,
+  withLatestFrom,
 } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -114,6 +115,8 @@ export class WorkspaceComponent implements OnInit {
     form: FormGroup<{
       url: FormControl<string | null>;
       name: FormControl<string | null>;
+      proxy_server: FormControl<string | null>;
+      proxy_auth: FormControl<string | null>;
       passive_sync: FormControl<boolean | null>;
     }>;
   };
@@ -125,10 +128,16 @@ export class WorkspaceComponent implements OnInit {
       url: FormControl<string | null>;
       name: FormControl<string | null>;
       passive_sync: FormControl<boolean | null>;
+      proxy_server: FormControl<string | null>;
+      proxy_auth: FormControl<string | null>;
     }>;
   };
-  configContentPreview?: {
+  muxContentPreview?: {
     content: string;
+  };
+  subscribeSourceContentPreview?: {
+    content: string;
+    id: number;
   };
   urlPreview?: {
     url: string;
@@ -218,7 +227,7 @@ export class WorkspaceComponent implements OnInit {
       takeUntilDestroyed(this.destoryRef)
     ).subscribe(theme => {
       this.tmplEditorOptions = {
-        theme: this.appConfigService.theme() === 'dark' ? 'vs-dark' : 'vs',
+        theme: theme === 'dark' ? 'vs-dark' : 'vs',
         language: 'yaml',
       }
     })
@@ -312,7 +321,9 @@ export class WorkspaceComponent implements OnInit {
             form: this.fb.group({
               url: ['', [Validators.required, RxwebValidators.url()]],
               name: ['', Validators.required],
-              passive_sync: [false]
+              passive_sync: [false],
+              proxy_server: [null as string | null],
+              proxy_auth: [null as string | null]
             }),
           };
         }),
@@ -368,13 +379,47 @@ export class WorkspaceComponent implements OnInit {
       form: this.fb.group({
         url: [item.url, [Validators.required, RxwebValidators.url()]],
         name: [item.name, Validators.required],
-        passive_sync: [!!item.passive_sync]
+        passive_sync: [!!item.passive_sync],
+        proxy_server: [item.proxy_server],
+        proxy_auth: [item.proxy_auth]
       }),
     };
   }
 
   cancelUpdateSubscribeSourceDialog() {
     this.subscribeSourceUpdate = undefined;
+  }
+
+  acceptUpdateSubscribeSourceContentDialog() {
+    if (!this.subscribeSourceContentPreview) {
+      return;
+    }
+    this.overlayService
+      .withSuspense(
+        this.confluenceService
+          .updateSubscribeSource(
+            this.subscribeSourceContentPreview.id,
+            {
+              content: this.subscribeSourceContentPreview.content
+            } as RecursiveNonNullable<SubscribeSourceUpdateDto>
+          )
+          .pipe(
+            combineLatestWith(this.confluenceId$),
+            switchMap(([_, id]) =>
+              this.confluenceService.getConfluenceById(id)
+            ),
+            takeUntilDestroyed(this.destoryRef)
+          )
+      )
+      .subscribe((c) => {
+        this.confluence$.next(c);
+        this.subscribeSourceUpdate = undefined;
+        this.overlayService.toast({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Updated successfully',
+        });
+      });
   }
 
   acceptUpdateSubscribeSourceDialog() {
@@ -451,12 +496,33 @@ export class WorkspaceComponent implements OnInit {
       });
   }
 
+  syncSubscribeSource(id: number) {
+    this.overlayService
+      .withSuspense(
+        this.confluenceService.syncSubscribeSource(id).pipe(
+          withLatestFrom(this.confluenceId$),
+          switchMap(([_, id]) => this.confluenceService.getConfluenceById(id)),
+          takeUntilDestroyed(this.destoryRef)
+        )
+      )
+      .subscribe((c) => {
+        this.confluence$.next(c);
+        this.overlayService.toast({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Sync successfully',
+        });
+      });
+  }
+
   openPreviewSubscribeSourceContentDialog(item: SubscribeSourceDto) {
-    this.configContentPreview = item;
+    this.subscribeSourceContentPreview = {
+      ...item
+    };
   }
 
   cancelPreviewSubscribeSourceContentDialog() {
-    this.configContentPreview = undefined;
+    this.subscribeSourceContentPreview = undefined;
   }
 
   muxConfluence() {
@@ -479,13 +545,13 @@ export class WorkspaceComponent implements OnInit {
   }
 
   openPreviewMuxContentDialog() {
-    this.configContentPreview = {
+    this.muxContentPreview = {
       content: this.confluence$.getValue()?.mux_content ?? '',
     };
   }
 
   cancelPreviewMuxContentDialog() {
-    this.configContentPreview = undefined;
+    this.muxContentPreview = undefined;
   }
 
   formatTime = format;

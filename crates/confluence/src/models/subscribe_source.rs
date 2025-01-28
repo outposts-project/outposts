@@ -21,6 +21,8 @@ pub struct Model {
     pub sub_expire: Option<DateTime>,
     // disable auto sync and sync all
     pub passive_sync: Option<bool>,
+    pub proxy_server: Option<String>,
+    pub proxy_auth: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

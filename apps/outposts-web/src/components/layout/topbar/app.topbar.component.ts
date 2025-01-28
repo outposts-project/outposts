@@ -34,12 +34,12 @@ import { StyleClass } from 'primeng/styleclass';
                     </a>
                 </li>
                 <li>
-                    <a href="https://discord.gg/N7RYQbEU" target="_blank" rel="noopener noreferrer" class="topbar-item">
+                    <a href="https://discord.gg/dj9teD6G" target="_blank" rel="noopener noreferrer" class="topbar-item">
                         <i class="pi pi-discord text-surface-700 dark:text-surface-100"></i>
                     </a>
                 </li>
                 <li>
-                    <a href="https://github.com/orgs/outposts-project/discussions" target="_blank" rel="noopener noreferrer" class="topbar-item">
+                    <a href="https://github.com/outposts-project/outposts/discussions" target="_blank" rel="noopener noreferrer" class="topbar-item">
                         <i class="pi pi-comments text-surface-700 dark:text-surface-100"></i>
                     </a>
                 </li>

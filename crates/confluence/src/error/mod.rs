@@ -45,6 +45,8 @@ pub enum AppError {
     Unauthorized(anyhow::Error),
     #[error("{message}")]
     BadRequest { message: String },
+    #[error("Invalid proxy auth header")]
+    InvalidProxyAuthHeader,
     #[error(transparent)]
     Other(#[from] anyhow::Error),
 }
@@ -76,6 +78,7 @@ impl IntoResponse for AppError {
             Self::Unauthorized(_) => StatusCode::UNAUTHORIZED,
             Self::Fetch(_) => StatusCode::INTERNAL_SERVER_ERROR,
             Self::BadRequest { .. } => StatusCode::BAD_REQUEST,
+            Self::InvalidProxyAuthHeader => StatusCode::BAD_REQUEST,
         };
         let error_msg = self.to_string();
         let error_body = serde_json::json!({ "error_msg": error_msg });

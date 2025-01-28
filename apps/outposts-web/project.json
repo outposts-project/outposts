@@ -157,14 +157,14 @@
           "buildTarget": "outposts-web:build:production"
         },
         "development": {
-          "buildTarget": "outposts-web:build:development",
-          "disableHostCheck": true,
-          "hmr": false
+          "buildTarget": "outposts-web:build:development"
         }
       },
       "defaultConfiguration": "development",
       "options": {
-        "host": "0.0.0.0"
+        "host": "127.0.0.1",
+        "hmr": false,
+        "liveReload": false
       }
     },
     "extract-i18n": {

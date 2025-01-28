@@ -102,6 +102,17 @@ export class ConfluenceService {
     );
   }
 
+
+  syncSubscribeSource(id: number) {
+    return this.httpClient.post(
+      `${environment.CONFLUENCE_API_ENDPOINT}/subscribe_source/sync/${id}`,
+      {},
+      {
+        responseType: 'json',
+      }
+    );
+  }
+
   muxConfluence(id: number) {
     return this.httpClient.post<ConfluenceDto>(
       `${environment.CONFLUENCE_API_ENDPOINT}/confluence/mux/${id}`,

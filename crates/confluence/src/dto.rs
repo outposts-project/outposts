@@ -34,8 +34,9 @@ pub struct SubscribeSourceDto {
     pub sub_total: Option<i64>,
     #[ts(type = "number", optional)]
     pub sub_expire: Option<i64>,
-    #[ts(optional)]
     pub passive_sync: Option<bool>,
+    pub proxy_server: Option<String>,
+    pub proxy_auth: Option<String>,
 }
 
 impl From<models::subscribe_source::Model> for SubscribeSourceDto {
@@ -53,6 +54,8 @@ impl From<models::subscribe_source::Model> for SubscribeSourceDto {
             sub_total: value.sub_total,
             sub_upload: value.sub_upload,
             passive_sync: value.passive_sync,
+            proxy_auth: value.proxy_auth,
+            proxy_server: value.proxy_server,
         }
     }
 }
@@ -152,8 +155,9 @@ pub struct SubscribeSourceCreationDto {
     pub confluence_id: i32,
     pub url: String,
     pub name: String,
-    #[ts(optional)]
     pub passive_sync: Option<bool>,
+    pub proxy_server: Option<String>,
+    pub proxy_auth: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
@@ -163,6 +167,8 @@ pub struct SubscribeSourceUpdateDto {
     pub name: Option<String>,
     pub content: Option<String>,
     pub passive_sync: Option<bool>,
+    pub proxy_server: Option<String>,
+    pub proxy_auth: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
