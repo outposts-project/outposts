@@ -92,7 +92,7 @@ pub(crate) async fn passive_sync_one_subscribe_source_with_url(
     ua: &str,
     db: &DatabaseConnection,
 ) -> Result<subscribe_source::Model, AppError> {
-    if sm.passive_sync.is_none_or(|ps| !ps) {
+    if sm.passive_sync.is_some_and(|ps| ps) {
         return Ok(sm);
     }
     sync_one_subscribe_source_with_url(sm, ua, db).await
