@@ -1,4 +1,4 @@
-FROM node:lts-slim as builder
+FROM node:lts-slim AS builder
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
@@ -9,5 +9,5 @@ RUN --mount=type=cache,id=angular,target=/usr/src/app/.angular npm run build -w 
 
 FROM nginx:alpine
 COPY ./apps/outposts-web/nginx.conf /etc/nginx/nginx.conf
-COPY --from=builder /usr/src/app/dist/outposts-web /usr/share/nginx/html
+COPY --from=builder /usr/src/app/dist/apps/outposts-web /usr/share/nginx/html
 EXPOSE 80
