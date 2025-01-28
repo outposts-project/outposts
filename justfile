@@ -4,7 +4,7 @@ dev-confluence:
   cargo watch -w crates/confluence -x "run --bin confluence_server"
 
 dev-web:
-  npm run start -w outposts-web
+  npx nx serve outposts-web 
 
 dev-proxy:
   npm run start -w dev-proxy

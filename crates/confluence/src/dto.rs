@@ -34,6 +34,9 @@ pub struct SubscribeSourceDto {
     pub sub_total: Option<i64>,
     #[ts(type = "number", optional)]
     pub sub_expire: Option<i64>,
+    pub passive_sync: Option<bool>,
+    pub proxy_server: Option<String>,
+    pub proxy_auth: Option<String>,
 }
 
 impl From<models::subscribe_source::Model> for SubscribeSourceDto {
@@ -50,6 +53,9 @@ impl From<models::subscribe_source::Model> for SubscribeSourceDto {
             sub_expire: value.sub_expire.map(|s| s.and_utc().timestamp_millis()),
             sub_total: value.sub_total,
             sub_upload: value.sub_upload,
+            passive_sync: value.passive_sync,
+            proxy_auth: value.proxy_auth,
+            proxy_server: value.proxy_server,
         }
     }
 }
@@ -118,14 +124,20 @@ impl ConfluenceDto {
             profiles: pms.into_iter().map(|s| s.into()).collect(),
             name: confluence.name,
             sub_download: confluence.sub_download,
-            sub_expire: confluence.sub_expire.map(|s| s.and_utc().timestamp_millis()),
+            sub_expire: confluence
+                .sub_expire
+                .map(|s| s.and_utc().timestamp_millis()),
             sub_total: confluence.sub_total,
             sub_upload: confluence.sub_upload,
             cron_expr: confluence.cron_expr,
             cron_expr_tz: confluence.cron_expr_tz,
-            cron_prev_at: confluence.cron_prev_at.map(|s| s.and_utc().timestamp_millis()),
+            cron_prev_at: confluence
+                .cron_prev_at
+                .map(|s| s.and_utc().timestamp_millis()),
             cron_err: confluence.cron_err,
-            cron_next_at: confluence.cron_next_at.map(|s| s.and_utc().timestamp_millis()),
+            cron_next_at: confluence
+                .cron_next_at
+                .map(|s| s.and_utc().timestamp_millis()),
             user_agent: confluence.user_agent,
         }
     }
@@ -143,6 +155,9 @@ pub struct SubscribeSourceCreationDto {
     pub confluence_id: i32,
     pub url: String,
     pub name: String,
+    pub passive_sync: Option<bool>,
+    pub proxy_server: Option<String>,
+    pub proxy_auth: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
@@ -151,6 +166,9 @@ pub struct SubscribeSourceUpdateDto {
     pub url: Option<String>,
     pub name: Option<String>,
     pub content: Option<String>,
+    pub passive_sync: Option<bool>,
+    pub proxy_server: Option<String>,
+    pub proxy_auth: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
@@ -161,7 +179,7 @@ pub struct ConfluenceUpdateDto {
     #[ts(optional)]
     pub user_agent: Option<String>,
     #[ts(optional)]
-    pub name: Option<String>
+    pub name: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]

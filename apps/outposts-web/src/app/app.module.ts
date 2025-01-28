@@ -1,52 +1,73 @@
-import { NgModule } from '@angular/core';
-import { BrowserModule } from '@angular/platform-browser';
-import { AppRoutingModule } from './app-routing.module';
+import { NgModule, provideZoneChangeDetection } from '@angular/core';
+import { BrowserModule, provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { AppComponent } from './app.component';
-import { TopbarComponent } from './core/layout/topbar/topbar.component';
-import { MenuComponent } from './core/layout/menu/menu.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { AppFooterComponent } from './core/layout/footer/footer.component';
 import {
-  provideHttpClient,
-  withFetch,
-  withInterceptorsFromDi,
+    provideHttpClient,
+    withFetch,
+    withInterceptorsFromDi,
 } from '@angular/common/http';
 import { TranslocoRootModule } from './transloco-root.module';
-import { WINDOW, windowProvider } from '@app/core/providers/window';
-import { DOCUMENT } from '@angular/common';
+import { WINDOW, windowProvider } from '@/core/providers/window';
+import { DOCUMENT, IMAGE_CONFIG } from '@angular/common';
 import { MonacoEditorModule } from 'ngx-monaco-editor-v2';
-import { AuthModule } from './auth/auth.module';
+import { AuthModule } from '@/domain/auth/auth.module';
 import { MessageService } from 'primeng/api';
-import { AppOverlayService } from '@app/core/servces/app-overlay.service';
+import { AppOverlayService } from '@/core/servces/app-overlay.service';
 import { ToastModule } from 'primeng/toast';
-import { SpinnerComponent } from './core/layout/spinner/spinner.component';
+import { SpinnerComponent } from '@/components/spinner/spinner.component';
+import { environment } from '@/environments/environment';
+import { provideRouter, RouterOutlet, withInMemoryScrolling } from '@angular/router';
+import { routes } from './app.routes';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import Noir from './app-theme';
+import { providePrimeNG } from 'primeng/config';
+import { PlatformService } from '@/core/servces/platform.service';
+import { AppConfigService } from '@/core/servces/app-config.service';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 @NgModule({
-  declarations: [AppComponent],
-  imports: [
-    BrowserModule,
-    BrowserAnimationsModule,
-    AppRoutingModule,
-    AuthModule,
-    TopbarComponent,
-    SpinnerComponent,
-    MenuComponent,
-    AppFooterComponent,
-    TranslocoRootModule,
-    MonacoEditorModule.forRoot(),
-    ToastModule,
-    SpinnerComponent,
-  ],
-  providers: [
-    provideHttpClient(withInterceptorsFromDi(), withFetch()),
-    {
-      provide: WINDOW,
-      useFactory: windowProvider,
-      deps: [DOCUMENT],
-    },
-    MessageService,
-    AppOverlayService,
-  ],
-  bootstrap: [AppComponent],
+    declarations: [AppComponent],
+    imports: [
+        BrowserModule,
+        BrowserAnimationsModule,
+        FormsModule,
+        ReactiveFormsModule,
+        AuthModule,
+        ToastModule,
+        SpinnerComponent,
+        TranslocoRootModule,
+        MonacoEditorModule.forRoot(),
+        RouterOutlet
+    ],
+    providers: [
+        ...(environment.ssr ? [provideClientHydration(withEventReplay())] : []),
+        provideZoneChangeDetection({ eventCoalescing: true }),
+        provideRouter(routes, withInMemoryScrolling({ anchorScrolling: 'enabled', scrollPositionRestoration: 'enabled' })),
+        provideHttpClient(withInterceptorsFromDi(), withFetch()),
+        provideAnimationsAsync(),
+        providePrimeNG({
+            theme: Noir, ripple: false, // inputStyle: 'outlined'
+        }),
+        {
+            provide: WINDOW,
+            useFactory: windowProvider,
+            deps: [DOCUMENT],
+        },
+        PlatformService,
+        MessageService,
+        AppOverlayService,
+        AppConfigService,
+        {
+            provide: IMAGE_CONFIG,
+            useValue: {
+                disableImageSizeWarning: true,
+                disableImageLazyLoadWarning: true
+            }
+        },
+    ],
+    bootstrap: [AppComponent],
 })
-export class AppModule {}
+export class AppModule {
+
+}

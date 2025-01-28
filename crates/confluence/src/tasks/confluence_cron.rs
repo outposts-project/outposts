@@ -1,16 +1,15 @@
 use crate::{
     error::AppError,
     models::confluence,
-    services::mux_one_confluence_impl,
     services::{
-        find_certain_confluence_profiles_and_subscribe_sources, sync_one_subscribe_source_with_url,
-        AppState,
+        find_certain_confluence_profiles_and_subscribe_sources, mux_one_confluence_impl,
+        passive_sync_one_subscribe_source_with_url, AppState,
     },
 };
 use chrono::Utc;
 use chrono_tz::Tz;
 use cron::Schedule;
-use futures::future::try_join_all;
+use futures::future;
 use sea_orm::{prelude::*, Set, Unchanged};
 use std::str::FromStr;
 use std::sync::Arc;
@@ -27,9 +26,9 @@ impl ConfluenceCronTask {
 
         let ua = cm.user_agent_or_default();
 
-        let sms = try_join_all(
+        let sms = future::try_join_all(
             sms.into_iter()
-                .map(|sm| sync_one_subscribe_source_with_url(sm, ua, db)),
+                .map(|sm| passive_sync_one_subscribe_source_with_url(sm, ua, db)),
         )
         .await?;
 

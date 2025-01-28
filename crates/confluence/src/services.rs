@@ -87,12 +87,40 @@ pub async fn find_certain_confluence_profiles_and_subscribe_sources(
     .map_err(AppError::from)
 }
 
+pub(crate) async fn passive_sync_one_subscribe_source_with_url(
+    sm: subscribe_source::Model,
+    ua: &str,
+    db: &DatabaseConnection,
+) -> Result<subscribe_source::Model, AppError> {
+    if sm.passive_sync.is_none_or(|ps| !ps) {
+        return Ok(sm);
+    }
+    sync_one_subscribe_source_with_url(sm, ua, db).await
+}
+
 pub async fn sync_one_subscribe_source_with_url(
     sm: subscribe_source::Model,
     ua: &str,
     db: &DatabaseConnection,
 ) -> Result<subscribe_source::Model, AppError> {
-    let client = reqwest::ClientBuilder::new().user_agent(ua).build()?;
+    let mut client_builder = reqwest::ClientBuilder::new().user_agent(ua);
+
+    if let Some(proxy_server) = &sm.proxy_server {
+        if !proxy_server.is_empty() {
+            let mut proxy = reqwest::Proxy::all(proxy_server)?;
+            if let Some(proxy_auth) = &sm.proxy_auth {
+                if !proxy_auth.is_empty() {
+                    proxy = proxy.custom_http_auth(
+                        HeaderValue::from_str(proxy_auth)
+                            .map_err(|_| AppError::InvalidProxyAuthHeader)?,
+                    );
+                }
+            }
+            client_builder = client_builder.proxy(proxy);
+        }
+    }
+
+    let client = client_builder.build()?;
     let res = client.get(&sm.url).send().await?;
     let mut sm = sm.into_active_model();
     if let Some(sub_userinfo) = parse_subscription_userinfo_in_header(res.headers()) {
@@ -260,7 +288,7 @@ pub async fn sync_one_confluence(
 
     let sms = try_join_all(
         sms.into_iter()
-            .map(|sm| sync_one_subscribe_source_with_url(sm, ua, db)),
+            .map(|sm| passive_sync_one_subscribe_source_with_url(sm, ua, db)),
     )
     .await?;
 
@@ -477,6 +505,9 @@ pub async fn create_one_subscribe_source(
         url: Set(subscribe_creation_dto.url),
         name: Set(subscribe_creation_dto.name),
         content: Set(String::new()),
+        passive_sync: Set(subscribe_creation_dto.passive_sync),
+        proxy_auth: Set(subscribe_creation_dto.proxy_auth),
+        proxy_server: Set(subscribe_creation_dto.proxy_server),
         ..Default::default()
     };
     pms = pms.save(db).await?;
@@ -508,6 +539,15 @@ pub async fn update_one_subscribe_source(
         if let Some(content) = subscribe_update_dto.content {
             pam.content = Set(content);
         }
+        if let Some(passive_sync) = subscribe_update_dto.passive_sync {
+            pam.passive_sync = Set(Some(passive_sync));
+        };
+        if let Some(proxy_auth) = subscribe_update_dto.proxy_auth {
+            pam.proxy_auth = Set(Some(proxy_auth));
+        };
+        if let Some(proxy_server) = subscribe_update_dto.proxy_server {
+            pam.proxy_server = Set(Some(proxy_server));
+        };
         let pam = pam.save(db).await?;
         let pm = pam.try_into_model()?;
         Ok(Json(pm.into()))
@@ -534,6 +574,31 @@ pub async fn delete_one_subscribe_source(
     if let Some(pm) = pm.pop() {
         let pam = pm.0.into_active_model();
         pam.delete(db).await?;
+        Ok(())
+    } else {
+        Err(AppError::DbNotFound(format!(
+            "cannot find subscribe source id = {}",
+            id
+        )))
+    }
+}
+
+pub async fn sync_one_subscribe_source(
+    State(state): State<Arc<AppState>>,
+    Extension(current_user): Extension<CurrentUser>,
+    Path(id): Path<i32>,
+) -> Result<(), AppError> {
+    let db = &state.conn;
+    let mut pm = subscribe_source::Entity::find_by_id(id)
+        .find_with_related(confluence::Entity)
+        .filter(confluence::Column::Creator.eq(&current_user.user_id))
+        .limit(1)
+        .all(db)
+        .await?;
+
+    if let Some((sm, cm)) = pm.pop() {
+        let cm = &cm[0];
+        sync_one_subscribe_source_with_url(sm, &cm.user_agent, db).await?;
         Ok(())
     } else {
         Err(AppError::DbNotFound(format!(

@@ -1,5 +1,5 @@
-import {environment} from "@environments/environment";
-import {TranslocoHttpLoader} from "@app/transloco-loader";
+import { environment } from "@/environments/environment";
+import { TranslocoHttpLoader } from '@/app/transloco-loader';
 
 export const TranslocoConfig = {
   config: {
