@@ -25,7 +25,6 @@ import { providePrimeNG } from 'primeng/config';
 import { PlatformService } from '@/core/servces/platform.service';
 import { AppConfigService } from '@/core/servces/app-config.service';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { DocModule } from '@/tools/doc/doc.module';
 
 @NgModule({
     declarations: [AppComponent],
@@ -36,7 +35,6 @@ import { DocModule } from '@/tools/doc/doc.module';
         ReactiveFormsModule,
         AuthModule,
         ToastModule,
-        DocModule,
         SpinnerComponent,
         TranslocoRootModule,
         MonacoEditorModule.forRoot(),
