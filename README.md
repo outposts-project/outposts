@@ -1,1 +1,1 @@
-# Outposts
+# OUTPOSTS

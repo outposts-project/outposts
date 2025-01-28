@@ -28,10 +28,7 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptorsFromDi(), withFetch()),
     provideAnimationsAsync(),
     providePrimeNG({
-      theme: Noir, ripple: true, inputStyle: 'outlined',
-      overlayOptions: {
-
-      }
+      theme: Noir, ripple: false, // inputStyle: 'outlined',
     }),
     {
       provide: WINDOW,

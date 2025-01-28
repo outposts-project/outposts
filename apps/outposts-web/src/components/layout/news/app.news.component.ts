@@ -1,9 +1,9 @@
 import News from '@/assets/data/news.json';
+
 import { AppConfigService } from '@/core/servces/app-config.service';
 import { CommonModule } from '@angular/common';
 import { afterNextRender, ChangeDetectionStrategy, ChangeDetectorRef, Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { StyleClass } from 'primeng/styleclass';
 
 @Component({
     selector: 'app-news',
@@ -13,7 +13,7 @@ import { StyleClass } from 'primeng/styleclass';
     imports: [CommonModule, FormsModule]
 })
 export class AppNewsComponent {
-    storageKey: string = 'primeng';
+    storageKey: string = 'outposts-banner-news';
 
     announcement: any;
 

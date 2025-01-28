@@ -8,10 +8,10 @@ import { CommonModule } from '@angular/common';
     imports: [CommonModule, ButtonModule, RouterModule],
     template: ` <div class="flex min-h-screen items-center justify-center">
         <div class="flex card flex-col items-center gap-20 sm:p-20">
-            <div class="flex flex-col sm:flex-row items-center justify-center gap-6 text-primary">
+            <div class="flex flex-col sm:flex-row items-baseline justify-center gap-6 text-primary">
                 <span class="font-bold text-9xl"> 4 </span>
-                <div class="flex items-center justify-center bg-primary text-primary-contrast text-primary-contrast rounded-full w-28 h-28">
-                    <i class="pi pi-prime !text-6xl"></i>
+                <div class="flex items-center justify-center bg-primary text-primary-contrast rounded-full w-24 h-24">
+                    <img src="/image/logo-512.png" >
                 </div>
                 <span class="font-bold text-9xl"> 4 </span>
             </div>
@@ -20,4 +20,4 @@ import { CommonModule } from '@angular/common';
         </div>
     </div>`
 })
-export class NotFoundDemo {}
+export class NotFoundDemo { }

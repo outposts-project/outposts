@@ -46,6 +46,19 @@ const Noir = definePreset(Aura, {
                 }
             }
         }
+    },
+    components: {
+        button: {
+            colorScheme: {
+                secondary: {
+                    focus: {
+                        ring: {
+                            color: 'transparent'
+                        }
+                    }
+                }
+            }
+        }
     }
 });
 
@@ -54,10 +67,9 @@ export default {
     preset: Noir,
     options: {
         darkModeSelector: '.p-dark',
-        cssLayer: false,
-        // cssLayer: {
-        //     name: 'primeng',
-        //     order: 'tailwind-base, primeng, tailwind-utilities'
-        // }
+        cssLayer: {
+            name: 'primeng',
+            order: 'tailwind-base, primeng, tailwind-utilities'
+        }
     }
 };

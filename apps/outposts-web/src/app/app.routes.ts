@@ -6,6 +6,7 @@ import { Routes } from '@angular/router';
 
 export const routes: Routes = [
     { path: '', component: LandingComponent, pathMatch: 'full' },
+    { path: 'apps', redirectTo: '/confluence', pathMatch: 'full' },
     {
         path: '',
         component: AppMainComponent,

@@ -8,6 +8,8 @@ import { AppFooterComponent } from './footer/app.footer.component';
 import { AppMenuComponent } from './menu/app.menu.component';
 import { AppNewsComponent } from './news/app.news.component';
 import { AppTopBarComponent } from './topbar/app.topbar.component';
+import { ToastModule } from 'primeng/toast';
+import { SpinnerComponent } from '../spinner/spinner.component';
 
 @Component({
     selector: 'app-main',
@@ -19,14 +21,16 @@ import { AppTopBarComponent } from './topbar/app.topbar.component';
             <div class="layout-content">
                 <app-menu />
                 <div class="layout-content-slot">
+                    <p-toast [baseZIndex]="999" />
                     <router-outlet></router-outlet>
                 </div>
             </div>
             <app-footer />
         </div>
+        <app-spinner />
     `,
     standalone: true,
-    imports: [RouterOutlet, AppFooterComponent, CommonModule, AppNewsComponent, AppMenuComponent, AppTopBarComponent]
+    imports: [RouterOutlet, AppFooterComponent, CommonModule, AppNewsComponent, AppMenuComponent, AppTopBarComponent, ToastModule, SpinnerComponent]
 })
 export class AppMainComponent {
     configService: AppConfigService = inject(AppConfigService);

@@ -1,6 +1,7 @@
 import { AppState } from '@/core/defs/app-state';
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { computed, effect, inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 
 @Injectable({
     providedIn: 'root'
@@ -8,7 +9,7 @@ import { computed, effect, inject, Injectable, PLATFORM_ID, signal } from '@angu
 export class AppConfigService {
     private readonly STORAGE_KEY = 'app-config-state';
 
-    appState = signal<AppState>(this.loadAppState());
+    appState = signal<AppState>(null as any);
 
     newsActive = signal(false);
 
@@ -18,11 +19,15 @@ export class AppConfigService {
 
     theme = computed(() => (this.appState()?.darkTheme ? 'dark' : 'light'));
 
+    theme$ = toObservable(this.theme);
+
     transitionComplete = signal<boolean>(false);
 
     private initialized = false;
 
     constructor() {
+        this.appState.set({ ...this.loadAppState() });
+
         effect(() => {
             const state = this.appState();
 

@@ -10,6 +10,20 @@ import { AppOverlayService } from '@/core/servces/app-overlay.service';
   selector: 'confluence-dashboard',
   template: `
     <p-dataView #dv [value]="confluences()">
+      <ng-template #emptymessage>
+        @if (overlayService.loading$$ | async) {
+        <div class="p-4">
+          <p-skeleton styleClass="mb-2"></p-skeleton>
+          <p-skeleton width="10rem" styleClass="mb-2"></p-skeleton>
+          <p-skeleton width="5rem" styleClass="mb-2"></p-skeleton>
+          <p-skeleton height="2rem" styleClass="mb-2"></p-skeleton>
+        </div>
+        } @else {
+          <div class="flex justify-center align-center py-10">
+          <i class="pi pi-inbox" style="font-size: 2.5rem"></i>
+        </div>
+        }
+      </ng-template>
       <ng-template #header>
         <div class="flex justify-between items-center">
           <div class="text-2xl flex items-center h-100">Confluence</div>
@@ -72,16 +86,6 @@ import { AppOverlayService } from '@/core/servces/app-overlay.service';
               ></p-button>
             </div>
           </div>
-        </div>
-        }
-      </ng-template>
-      <ng-template pTemplate="empty">
-        @if (overlayService.loading$$ | async) {
-        <div class="p-4">
-          <p-skeleton styleClass="mb-2"></p-skeleton>
-          <p-skeleton width="10rem" styleClass="mb-2"></p-skeleton>
-          <p-skeleton width="5rem" styleClass="mb-2"></p-skeleton>
-          <p-skeleton height="2rem" styleClass="mb-2"></p-skeleton>
         </div>
         }
       </ng-template>

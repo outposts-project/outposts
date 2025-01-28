@@ -8,12 +8,14 @@ import { Subscription } from 'rxjs';
 import { FooterSectionComponent } from './footersection.component';
 import { HeroSectionComponent } from './herosection.component';
 import { ButtonModule } from 'primeng/button';
+import { ToastModule } from 'primeng/toast';
+import { SpinnerComponent } from "../../components/spinner/spinner.component";
 
 @Component({
     selector: 'landing',
     standalone: true,
     templateUrl: './landing.component.html',
-    imports: [CommonModule, AppNewsComponent, AppTopBarComponent, ButtonModule, HeroSectionComponent, FooterSectionComponent]
+    imports: [CommonModule, AppNewsComponent, AppTopBarComponent, ButtonModule, HeroSectionComponent, FooterSectionComponent, ToastModule]
 })
 export class LandingComponent implements OnInit {
     subscription!: Subscription;
@@ -37,10 +39,10 @@ export class LandingComponent implements OnInit {
     ) { }
 
     ngOnInit() {
-        this.titleService.setTitle('PrimeNG - Angular UI Component Library');
+        this.titleService.setTitle('OUTPOSTS - Your personal digital outpost for side projects and homelabs');
         this.metaService.updateTag({
             name: 'description',
-            content: 'The ultimate collection of design-agnostic, flexible and accessible Angular UI Components.'
+            content: 'OUTPOSTS: Build your personal digital outpost—streamline your side projects and homelab with essential tools and features, inspired by the spirit of exploration.'
         });
     }
 }

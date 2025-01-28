@@ -1,3 +1,4 @@
+import { environment } from '@/environments/environment';
 import { Component } from '@angular/core';
 
 @Component({
@@ -6,13 +7,12 @@ import { Component } from '@angular/core';
     template: `
         <div class="layout-footer">
             <div>
-                <span>PrimeNG {{ version }} by </span>
-                <a href="https://www.primetek.com.tr">PrimeTek</a>
+                <span>OUTPOSTS {{ version }} by </span>
+                <a href="https://github.com/outposts-project">outposts-project</a>
             </div>
         </div>
     `
 })
 export class AppFooterComponent {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    version = require('package.json') && require('package.json').version;
+    version = environment.APP_VERSION;
 }

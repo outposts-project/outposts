@@ -49,7 +49,7 @@ import { DocModule } from '@/tools/doc/doc.module';
         provideHttpClient(withInterceptorsFromDi(), withFetch()),
         provideAnimationsAsync(),
         providePrimeNG({
-            theme: Noir, ripple: false, inputStyle: 'outlined'
+            theme: Noir, ripple: false, // inputStyle: 'outlined'
         }),
         {
             provide: WINDOW,

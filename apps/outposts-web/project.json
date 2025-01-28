@@ -7,7 +7,7 @@
   "tags": [],
   "targets": {
     "build": {
-      "executor": "@nx/angular:application",
+      "executor": "@nx/angular:browser-esbuild",
       "outputs": [
         "{options.outputPath}"
       ],
@@ -17,7 +17,7 @@
         ],
         "outputPath": "dist/apps/outposts-web",
         "index": "apps/outposts-web/src/index.html",
-        "browser": "apps/outposts-web/src/main.ts",
+        "main": "apps/outposts-web/src/main.ts",
         "polyfills": [
           "zone.js"
         ],
@@ -158,13 +158,13 @@
         },
         "development": {
           "buildTarget": "outposts-web:build:development",
-          "disableHostCheck": true
+          "disableHostCheck": true,
+          "hmr": false
         }
       },
       "defaultConfiguration": "development",
       "options": {
-        "host": "0.0.0.0",
-        "hmr": false
+        "host": "0.0.0.0"
       }
     },
     "extract-i18n": {

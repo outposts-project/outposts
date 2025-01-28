@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, effect, inject } from '@angular/core';
 import { ConfluenceService } from '../confluence.service';
 import {
   BehaviorSubject,
@@ -12,10 +12,11 @@ import {
   combineLatestWith,
   shareReplay,
   tap,
+  skip,
 } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import type { editor } from 'monaco-editor';
+import { editor as MonacoEditor } from 'monaco-editor';
 import type { ConfluenceDto } from '../bindings/ConfluenceDto';
 import type { SubscribeSourceDto } from '../bindings/SubscribeSourceDto';
 import type { ProfileDto } from '../bindings/ProfileDto';
@@ -35,527 +36,12 @@ import { QrcodeService } from '@/tools/qrcode/qrcode.service';
 import { AppOverlayService } from '@/core/servces/app-overlay.service';
 import { hourPlusLevelCronExprValidator } from '../validators/cron-expr.validators';
 import { pascalCase } from 'change-case';
+import { AppConfigService } from '@/core/servces/app-config.service';
 
 @Component({
   standalone: false,
   selector: 'confluence-workspace',
-  template: `
-    <p-breadcrumb 
-      class="max-w-full" [model]="breadcrumb.items" [home]="breadcrumb.home"></p-breadcrumb>
-    <div class="card flex-1 min-w-0 mt-2">
-      <p-fieldset class="flex-1 min-w-0">
-        <ng-template pTemplate="header">
-          <div class="flex items-center gap-2 px-2" style="cursor: pointer;" (click)="openUpdateNameDialog()">
-              <span class="font-bold">{{(confluenceName$ | async)!}}</span>
-          </div>
-        </ng-template>
-        <div
-          class="flex justify-between items-center border-primary-300 mt-6 mb-6 p-4 font-bold bg-surface-50"
-        >
-          <div class="text-xl">Template</div>
-          <div class="flex gap-2">
-            <p-button
-              size="small"
-              label="Save"
-              icon="pi pi-check"
-              (click)="saveTmpl()"
-              [outlined]="true"
-            ></p-button>
-            <p-button
-              size="small"
-              label="Reset"
-              icon="pi pi-times"
-              (click)="resetTmpl()"
-              [outlined]="true"
-              styleClass="p-button-secondary"
-            ></p-button>
-          </div>
-        </div>
-        <div class="m-0 rounded-border border">
-          <ngx-monaco-editor
-            [options]="tmplEditorOptions"
-            [(ngModel)]="tmpl"
-            style="min-height: 200px; height: 50vh;"
-          ></ngx-monaco-editor>
-        </div>
-        <div
-          class="flex justify-between items-center border-primary-300 mt-6 mb-6 p-4 font-bold bg-surface-50"
-        >
-          <div class="text-xl">Subscribe Sources</div>
-          <div class="flex gap-2">
-                <p-button
-                  size="small"
-                  label="Sync"
-                  icon="pi pi-sync"
-                  (click)="syncConfluence()"
-                  [outlined]="true"
-                ></p-button>
-              </div>
-        </div>
-        <p-dataView
-          #dv
-          [value]="subscribeSources"
-          styleClass="mt-6"
-          [emptyMessage]="' '"
-        >
-          <ng-template #list let-items>
-            <div
-              class="flex flex-wrap mt-6 gap-6 items-stretch text-center"
-            >
-              <p-card
-                class="cursor-pointer confluence-subscribe-source-item h-full"
-                (click)="openCreateSubscribeSourceDialog()"
-              >
-                <div>Import</div>
-                <div
-                  class="flex items-center justify-center gap-1 mt-2"
-                >
-                  <i class="pi pi-plus p-1"></i>
-                </div>
-              </p-card>
-              @for (item of items; track item.id) {
-              <div class="flex flex-col items-center">
-                <p-card
-                  class="confluence-subscribe-source-item h-full text-center relative"
-                >
-                  <div>{{ item.name }}</div>
-                  <div
-                    class="flex items-center justify-center gap-1 mt-2"
-                  >
-                    <i
-                      class="pi pi-eye p-1 cursor-pointer"
-                      (click)="openPreviewSubscribeSourceContentDialog(item)"
-                    ></i>
-                    <i
-                      class="pi pi-file-edit p-1 cursor-pointer"
-                      (click)="openUpdateSubscribeSourceDialog(item)"
-                    ></i>
-                    <i
-                      class="pi pi-times p-1 cursor-pointer"
-                      (click)="removeSubscribeSource(item.id)"
-                    ></i>
-                  </div>
-                  <div
-                    class="absolute rounded-full"
-                    [style]="{
-                      background: item.content
-                        ? 'var(--green-400)'
-                        : 'var(--gray-400)',
-                      height: '0.5em',
-                      width: '0.5em',
-                      right: '0.5em',
-                      top: '0.5em'
-                    }"
-                  ></div>
-                </p-card>
-                <time class="mt-2">
-                  Updated at:
-                  <br />
-                  {{ formatTime(item.updated_at, 'MM-dd HH:mm') }}
-                </time>
-              </div>
-              }
-            </div>
-          </ng-template>
-        </p-dataView>
-        <div
-          class="flex justify-between items-center border-primary-300 mt-6 mb-6 p-4 font-bold bg-surface-50"
-        >
-          <div class="text-xl">Profiles</div>
-          <div
-                class="flex items-center justify-center gap-1 mt-2"
-              >
-                <p-button
-                  size="small"
-                  label="Mux"
-                  icon="pi pi-sliders-v"
-                  (click)="muxConfluence()"
-                  [outlined]="true"
-                ></p-button>
-                <p-button
-                  size="small"
-                  label="Preview"
-                  icon="pi pi-eye"
-                  (click)="openPreviewMuxContentDialog()"
-                  [outlined]="true"
-                ></p-button>
-              </div>
-        </div>
-        <p-dataView
-          #dv
-          [value]="subscribeSources"
-          styleClass="mt-6"
-          [emptyMessage]="' '"
-        >
-          <ng-template #list let-items>
-            <div
-              class="flex flex-wrap mt-6 gap-6 items-stretch text-center"
-            >
-              <p-card
-                class="cursor-pointer confluence-profile-item h-full"
-                (click)="createProfile()"
-              >
-                <div>
-                  New
-                  <br />
-                  Profile
-                </div>
-                <div
-                  class="flex items-center justify-center gap-1 mt-2"
-                >
-                  <i class="pi pi-plus p-1"></i>
-                </div>
-              </p-card>
-              @for (item of items; track item.id) {
-              <p-card
-                class="confluence-profile-item h-full text-center relative"
-              >
-                <time style="word-wrap: pre-wrap;">
-                  {{ formatTime(item.updated_at, 'MM-dd') }}
-                  <br />
-                  {{ formatTime(item.updated_at, 'HH:mm') }}
-                </time>
-                <div
-                  class="flex items-center justify-center gap-1 mt-2"
-                >
-                  <i
-                    class="pi pi-copy p-1 cursor-pointer"
-                    (click)="copyProfileUrl(item)"
-                  ></i>
-                  <i
-                    class="pi pi-times p-1 cursor-pointer"
-                    (click)="removeProfile(item.id)"
-                  ></i>
-                </div>
-              </p-card>
-              }
-            </div>
-          </ng-template>
-        </p-dataView>
-        <div
-          class="flex justify-between items-center border-primary-300 mt-6 mb-6 p-4 font-bold bg-surface-50"
-        >
-          <div class="text-xl">Sync Schedule</div>
-          <div class="flex gap-2">
-            <p-button
-            size="small"
-              label="Save"
-              icon="pi pi-check"
-              (click)="saveCron()"
-              [outlined]="true"
-            ></p-button>
-          </div>
-        </div>
-        <div class="m-0">
-          <form
-            [formGroup]="cronUpdateForm"
-            class="w-full flex flex-col"
-            onsubmit="return false;"
-          >
-            <input
-              [ngClass]="{
-                'ng-invalid': cronUpdateForm.controls.cronExpr.invalid,
-                'ng-dirty': cronUpdateForm.controls.cronExpr.touched
-              }"
-              type="text"
-              id="cron-update-cron-expr"
-              pInputText
-              formControlName="cronExpr"
-              autocomplete="off"
-            />
-            <small
-              class="mt-2"
-              [ngClass]="{
-                'text-red-500':
-                  cronUpdateForm.controls.cronExpr.touched &&
-                  cronUpdateForm.controls.cronExpr.invalid
-              }"
-            >
-              @if (cronUpdateForm.controls.cronExpr.touched &&
-              cronUpdateForm.controls.cronExpr.invalid &&
-              !cronUpdateForm.controls.cronExpr.errors?.['emptyCronExpr']) {
-              <span style="text-transform: capitalize;">
-                {{ cronUpdateForm.controls.cronExpr.errors?.['message'] || '123' }}
-              </span>
-              } @else { Support unix style cron expr, min unit hour, such as
-              <code>0 0 8 * * *</code>
-              }
-            </small>
-          </form>
-        </div>
-        <div
-          class="flex justify-between items-center border-y mt-6 mb-6 p-4 font-bold"
-          style="background: #f9fafb;"
-        >
-          <div class="text-xl">Sync User-Agent</div>
-          <div class="flex gap-2">
-            <p-button
-            size="small"
-              label="Save"
-              icon="pi pi-check"
-              (click)="saveUA()"
-              [outlined]="true"
-            ></p-button>
-          </div>
-        </div>
-        <div class="m-0">
-          <form
-            [formGroup]="uaUpdateForm"
-            class="w-full flex flex-col"
-            onsubmit="return false;"
-          >
-            <input
-              [ngClass]="{
-                'ng-invalid': uaUpdateForm.controls.userAgent.invalid,
-                'ng-dirty': uaUpdateForm.controls.userAgent.touched
-              }"
-              type="text"
-              id="ua-update-user-agent"
-              pInputText
-              formControlName="userAgent"
-              autocomplete="off"
-              placeholder="clash-verge/v1.5.11"
-            />
-          </form>
-        </div>
-      </p-fieldset>
-    </div>
-    @if (subscribeSourceCreation) {
-    <p-dialog
-      header="New Subscribe Source"
-      [visible]="true"
-      (visibleChange)="cancelCreateSubscribeSourceDialog()"
-      [modal]="true"
-      [style]="{ width: '50vw', minWidth: '300px' }"
-      [draggable]="false"
-      [resizable]="false"
-      [baseZIndex]="100"
-    >
-      <form
-        [formGroup]="subscribeSourceCreation.form"
-        class="w-full flex flex-col"
-        onsubmit="return false;"
-      >
-        @for (item of subscribeSourceCreation.form.controls | keyvalue; track
-        item.key) {
-        <label
-          style="text-transform: capitalize;"
-          [ngClass]="{ 'mt-4': !$first }"
-          for="subscribe-source-creation-{{ item.key }}"
-        >
-          {{ pascalCase(item.key) }}
-        </label>
-        @if (item.key === 'passive_sync') {
-          <p-checkbox [formControlName]="item.key" [binary]="true" value="New York" inputId="ny" id="subscribe-source-creation-{{ item.key }}" />
-        } @else {
-          <input
-          class="mt-2"
-          [ngClass]="{
-            'ng-invalid': item.value.invalid,
-            'ng-dirty': item.value.touched
-          }"
-          type="text"
-          id="subscribe-source-creation-{{ item.key }}"
-          pInputText
-          [formControlName]="item.key"
-          autocomplete="off"
-        />
-        }
-        }
-        <div class="flex justify-end gap-2 mt-6">
-          <p-button
-          size="small"
-            label="Cancel"
-            icon="pi pi-times"
-            [outlined]="true"
-            (click)="cancelCreateSubscribeSourceDialog()"
-          ></p-button>
-          <p-button
-          size="small"
-            label="Create"
-            icon="pi pi-check"
-            (click)="acceptCreateSubscribeSourceDialog()"
-          ></p-button>
-        </div>
-      </form>
-    </p-dialog>
-    } 
-    @if (nameUpdateDialog) {
-    <p-dialog
-      header="Rename"
-      [visible]="true"
-      (visibleChange)="cancelUpdateNameDialog()"
-      [modal]="true"
-      [style]="{ width: '50vw', minWidth: '300px' }"
-      [draggable]="false"
-      [resizable]="false"
-      [baseZIndex]="100"
-    >
-      <form
-        [formGroup]="nameUpdateDialog.form"
-        class="w-full flex flex-col"
-        onsubmit="return false;"
-      >
-        @for (item of nameUpdateDialog.form.controls | keyvalue; track
-        item.key) {
-        <label
-          style="text-transform: capitalize;"
-          [ngClass]="{ 'mt-4': !$first }"
-          for="update-name-{{ item.key }}"
-        >
-          {{ item.key }}
-        </label>
-        <input
-          class="mt-2"
-          [ngClass]="{
-            'ng-invalid': item.value.invalid,
-            'ng-dirty': item.value.touched
-          }"
-          type="text"
-          id="update-name-{{ item.key }}"
-          pInputText
-          [formControlName]="item.key"
-          autocomplete="off"
-        />
-        }
-        <div class="flex justify-end gap-2 mt-6">
-          <p-button
-          size="small"
-            label="Cancel"
-            icon="pi pi-times"
-            [outlined]="true"
-            (click)="cancelUpdateNameDialog()"
-          ></p-button>
-          <p-button
-          size="small"
-            label="Save"
-            icon="pi pi-check"
-            (click)="acceptUpdateNameDialog()"
-          ></p-button>
-        </div>
-      </form>
-    </p-dialog>
-    }
-    @if (subscribeSourceUpdate) {
-    <p-dialog
-      header="Edit Subscribe Source"
-      [visible]="true"
-      (visibleChange)="cancelUpdateSubscribeSourceDialog()"
-      [modal]="true"
-      [style]="{ width: '50vw', minWidth: '300px' }"
-      [draggable]="false"
-      [resizable]="false"
-      [baseZIndex]="100"
-    >
-      <form
-        [formGroup]="subscribeSourceUpdate.form"
-        class="w-full flex flex-col"
-        onsubmit="return false;"
-      >
-        <label
-          style="text-transform: capitalize;"
-          for="subscribe-source-creation-id"
-        >
-          id
-        </label>
-        <input
-          class="mt-2"
-          type="text"
-          id="subscribe-source-creation-id"
-          pInputText
-          [value]="subscribeSourceUpdate.value.id"
-          autocomplete="off"
-          [disabled]="true"
-        />
-        @for (item of subscribeSourceUpdate.form.controls | keyvalue; track
-        item.key) {
-        <label
-          style="text-transform: capitalize;"
-          class="mt-6"
-          for="subscribe-source-creation-{{ item.key }}"
-        >
-        {{ pascalCase(item.key) }}
-        </label>
-        @if (item.key === 'passive_sync') {
-          <p-checkbox class="mt-2" [formControlName]="item.key" [binary]="true" value="New York" inputId="ny" id="subscribe-source-creation-{{ item.key }}" />
-        } @else {
-          <input
-            class="mt-2"
-            [ngClass]="{
-              'ng-invalid': item.value.invalid,
-              'ng-dirty': item.value.touched
-            }"
-            type="text"
-            id="subscribe-source-creation-{{ item.key }}"
-            pInputText
-            [formControlName]="item.key"
-            autocomplete="off"
-          />
-        }
-        
-        }
-        <div class="flex justify-end gap-2 mt-6">
-          <p-button
-          size="small"
-            label="Cancel"
-            icon="pi pi-times"
-            [outlined]="true"
-            (click)="cancelUpdateSubscribeSourceDialog()"
-          ></p-button>
-          <p-button
-          size="small"
-            label="Save"
-            icon="pi pi-check"
-            (click)="acceptUpdateSubscribeSourceDialog()"
-          ></p-button>
-        </div>
-      </form>
-    </p-dialog>
-    } @if (configContentPreview) {
-    <p-dialog
-      header="Preview Subscribe Source Content"
-      [visible]="true"
-      (visibleChange)="cancelPreviewSubscribeSourceContentDialog()"
-      [modal]="true"
-      [style]="{ width: '50vw', minWidth: '300px' }"
-      [draggable]="false"
-      [resizable]="false"
-      [baseZIndex]="100"
-    >
-      <ngx-monaco-editor
-        [options]="tmplEditorOptions"
-        [(ngModel)]="configContentPreview.content"
-        [disabled]="true"
-        style="min-height: 200px; height: 50vh;"
-      ></ngx-monaco-editor>
-    </p-dialog>
-    } @if (urlPreview) {
-    <p-dialog
-      header="Preview Profile Content"
-      [visible]="true"
-      (visibleChange)="cancelUrlPreviewDialog()"
-      [modal]="true"
-      [style]="{ width: '50vw', minWidth: '300px' }"
-      [draggable]="false"
-      [resizable]="false"
-      [baseZIndex]="100"
-    >
-      <div class="flex flex-col">
-        <a class="px-link profile-url" (click)="copyUrl(urlPreview.url)">
-          {{ urlPreview.url }}
-        </a>
-        @if (urlPreview.qrcodeDataUrl) {
-        <img
-          class="h-5"
-          [src]="urlPreview.qrcodeDataUrl"
-          alt="qrcode"
-          class="mx-auto"
-        />
-        }
-      </div>
-    </p-dialog>
-    }
-  `,
+  templateUrl: './workspace.component.html',
   styles: `
     :host ::ng-deep {
       .p-breadcrumb {
@@ -596,6 +82,7 @@ import { pascalCase } from 'change-case';
 export class WorkspaceComponent implements OnInit {
   protected readonly confluenceService = inject(ConfluenceService);
   protected readonly route = inject(ActivatedRoute);
+  protected readonly appConfigService = inject(AppConfigService);
   protected readonly destoryRef = inject(DestroyRef);
   protected readonly overlayService = inject(AppOverlayService);
   protected readonly fb = inject(FormBuilder);
@@ -605,11 +92,6 @@ export class WorkspaceComponent implements OnInit {
     shareReplay(1)
   );
   protected readonly clipboardService = inject(ClipboardService);
-  protected readonly tmplEditorOptions: editor.IStandaloneEditorConstructionOptions =
-    {
-      theme: 'vs',
-      language: 'yaml',
-    };
   protected readonly qrcodeService = inject(QrcodeService);
 
 
@@ -617,6 +99,11 @@ export class WorkspaceComponent implements OnInit {
   confluenceName$ = this.confluence$.pipe(
     map((c) => `${c?.name ?? ''}`.toLocaleUpperCase())
   );
+  protected tmplEditorOptions: MonacoEditor.IStandaloneEditorConstructionOptions =
+    {
+      theme: this.appConfigService.theme() === 'dark' ? 'vs-dark' : 'vs',
+      language: 'yaml',
+    };
   tmpl = '';
   profiles: ProfileDto[] = [];
   subscribeSources: SubscribeSourceDto[] = [];
@@ -725,6 +212,16 @@ export class WorkspaceComponent implements OnInit {
           userAgent: ua,
         });
       });
+
+    this.appConfigService.theme$.pipe(
+      skip(1),
+      takeUntilDestroyed(this.destoryRef)
+    ).subscribe(theme => {
+      this.tmplEditorOptions = {
+        theme: this.appConfigService.theme() === 'dark' ? 'vs-dark' : 'vs',
+        language: 'yaml',
+      }
+    })
   }
 
   openUpdateNameDialog() {
@@ -1136,6 +633,8 @@ export class WorkspaceComponent implements OnInit {
   }
 
   pascalCase(text: string) {
-    return pascalCase(text);
+    return pascalCase(text, {
+      delimiter: ' '
+    });
   }
 }

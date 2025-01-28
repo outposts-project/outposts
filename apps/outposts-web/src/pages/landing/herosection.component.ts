@@ -43,16 +43,16 @@ import { TooltipModule } from 'primeng/tooltip';
     template: `
         <section class="landing-hero py-20 px-20 lg:px-20">
             <div class="flex flex-col items-center">
-                <h1 class="text-5xl font-bold text-center xl:text-left leading-tight">The Next-Gen UI Suite for <span class="font-bold text-primary">Angular</span></h1>
+                <h1 class="text-5xl font-bold text-center xl:text-left leading-tight">Your Personal <span class="font-bold text-primary">Digital OUTPOST</span> for Side Projects and Homelabs </h1>
                 <p class="text-center mt-0 mb-20 text-surface-500 dark:text-surface-400 font-medium text-xl leading-relaxed lg:px-56">
-                    Enhance your web applications with PrimeNG's comprehensive suite of customizable, feature-rich UI components. With PrimeNG, turning your development vision into reality has never been easier.
+                    Build your personal digital outpost—streamline your side projects and homelab with essential tools and features, inspired by the spirit of exploration.
                 </p>
                 <div class="flex items-center gap-6">
-                    <a [routerLink]="'confluence'" class="linkbox linkbox-primary">
+                    <a routerLink="/apps" class="linkbox linkbox-primary">
                         <span>Get Started</span>
                         <i class="pi pi-arrow-right ms-4"></i>
                     </a>
-                    <a href="https://github.com/primefaces/primeng" target="_blank" rel="noopener noreferrer" class="linkbox">
+                    <a href="https://github.com/outposts-project/outposts" target="_blank" rel="noopener noreferrer" class="linkbox">
                         <span>Give a Star</span>
                         <i class="pi pi-star-fill ms-4 text-yellow-500"></i>
                     </a>
