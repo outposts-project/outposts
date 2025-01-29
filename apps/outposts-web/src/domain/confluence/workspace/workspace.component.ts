@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, effect, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { ConfluenceService } from '../confluence.service';
 import {
   BehaviorSubject,
@@ -104,6 +104,7 @@ export class WorkspaceComponent implements OnInit {
     {
       theme: this.appConfigService.theme() === 'dark' ? 'vs-dark' : 'vs',
       language: 'yaml',
+      automaticLayout: true
     };
   tmpl = '';
   profiles: ProfileDto[] = [];

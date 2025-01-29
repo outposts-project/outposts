@@ -12,7 +12,7 @@ import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { CardModule } from 'primeng/card';
 import { AvatarModule } from 'primeng/avatar';
-import { FieldsetModule } from 'primeng/fieldset';
+import { PanelModule } from 'primeng/panel';
 import { WorkspaceComponent } from './workspace/workspace.component';
 import { MonacoEditorModule } from 'ngx-monaco-editor-v2';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -37,7 +37,7 @@ import { BreadcrumbModule } from 'primeng/breadcrumb';
     ButtonModule,
     CardModule,
     AvatarModule,
-    FieldsetModule,
+    PanelModule,
     RouterModule,
     FormsModule,
     MonacoEditorModule,

@@ -18,7 +18,7 @@ import { StyleClass } from 'primeng/styleclass';
                     <img width="150" height="30" src="image/logo-512-w.png" alt="logo"/>
                 </a>
                 <a [routerLink]="['/']" class="layout-topbar-icon" aria-label="OUTPOSTS Logo">
-                    <img src="image/logo-512.png" alt="logo" />
+                    <img width="30" height="30" src="image/logo-512.png" alt="logo" />
                 </a>
             </div>
 
