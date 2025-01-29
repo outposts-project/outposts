@@ -45,7 +45,7 @@ import { TooltipModule } from 'primeng/tooltip';
             <div class="flex flex-col items-center">
                 <h1 class="text-5xl font-bold text-center xl:text-left leading-tight">Your Personal <span class="font-bold text-primary">Digital OUTPOST</span> for Side Projects and Homelabs </h1>
                 <p class="text-center mt-0 mb-20 text-surface-500 dark:text-surface-400 font-medium text-xl leading-relaxed lg:px-56">
-                    Build your personal digital outpost—streamline your side projects and homelab with essential tools and features, inspired by the spirit of exploration.
+                    Build my personal digital outpost—streamline your side projects and homelab with essential tools and features, inspired by the spirit of exploration.
                 </p>
                 <div class="flex items-center gap-6">
                     <a routerLink="/apps" class="linkbox linkbox-primary">

@@ -38,10 +38,10 @@ export class LandingComponent implements OnInit {
     ) { }
 
     ngOnInit() {
-        this.titleService.setTitle('OUTPOSTS - Your personal digital outpost for side projects and homelabs');
+        this.titleService.setTitle('OUTPOSTS - My personal digital outpost for side projects and homelabs');
         this.metaService.updateTag({
             name: 'description',
-            content: 'OUTPOSTS: Build your personal digital outpost—streamline your side projects and homelab with essential tools and features, inspired by the spirit of exploration.'
+            content: 'OUTPOSTS: Build my personal digital outpost—streamline your side projects and homelab with essential tools and features, inspired by the spirit of exploration.'
         });
     }
 }
