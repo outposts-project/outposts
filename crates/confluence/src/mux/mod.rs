@@ -12,10 +12,10 @@ pub fn mux_configs(
     let others = &template.others;
     let rules = &template.rules;
     let proxy_groups = &template.proxy_groups;
-    let mut name_to_proxies_map = HashMap::<&str, Vec<Proxy>>::new();
-    let mut proxy_servers = HashSet::<ServerTld<'_>>::new();
+    let mut source_name_to_proxies_map = HashMap::<&str, Vec<Proxy>>::new();
+    let mut proxy_servers_root_ltd = HashSet::<ServerTld<'_>>::new();
+    let mut proxy_name_count = HashMap::<&str, usize>::new();
 
-    let mut mux_proxies = vec![];
     let mut mux_proxy_groups = vec![];
     let mut mux_rules = vec![];
 
@@ -24,48 +24,70 @@ pub fn mux_configs(
             {
                 // resolve proxy server root domain
                 let proxy_server_root = parse_server_tld(name, p.server())?;
-                proxy_servers.insert(proxy_server_root);
+                proxy_servers_root_ltd.insert(proxy_server_root);
             }
 
             {
                 // group proxies by config name
-                name_to_proxies_map
+                source_name_to_proxies_map
                     .entry(name)
                     .and_modify(|v| v.push(p.clone()))
                     .or_insert_with(|| vec![p.clone()]);
             }
 
             {
-                mux_proxies.push(p.clone());
+                proxy_name_count
+                    .entry(p.name())
+                    .and_modify(|v| {
+                        *v += 1;
+                    })
+                    .or_insert_with(|| 1);
             }
         }
     }
 
+    let mut mux_proxies = vec![];
+
     {
-        let names = sources.iter().map(|e| e.0.to_string()).collect::<Vec<_>>();
+        let source_names = sources.iter().map(|e| e.0.to_string()).collect::<Vec<_>>();
 
         for g in proxy_groups {
             let mut n = g.clone();
             if let Some(index) = n.proxies.iter().position(|f| f.trim() == PROXY_SLOT) {
-                n.proxies.splice(index..index + 1, names.clone());
+                n.proxies.splice(index..index + 1, source_names.clone());
             }
             mux_proxy_groups.push(n);
         }
 
-        mux_proxy_groups.extend(
-            name_to_proxies_map
-                .iter()
-                .map(|(name, proxies)| ProxyGroup {
-                    name: name.to_string(),
-                    kind: ProxyGroupKind::Select,
-                    proxies: proxies.iter().map(|p| p.name().to_string()).collect(),
-                    others: HashMap::new(),
-                }),
-        )
+        for (source_name, proxies) in source_name_to_proxies_map {
+            let new_proxies = proxies
+                .into_iter()
+                .map(|mut p| {
+                    let proxy_name = p.name();
+                    let new_proxy_name = if proxy_name_count.get(proxy_name).is_some_and(|s| s > &1)
+                    {
+                        format!("{} {}", source_name, proxy_name)
+                    } else {
+                        proxy_name.to_string()
+                    };
+                    p.set_name(new_proxy_name);
+                    p
+                })
+                .collect::<Vec<Proxy>>();
+
+            mux_proxy_groups.push(ProxyGroup {
+                name: source_name.to_string(),
+                kind: ProxyGroupKind::Select,
+                proxies: new_proxies.iter().map(|s| s.name().to_string()).collect(),
+                others: HashMap::new(),
+            });
+
+            mux_proxies.extend(new_proxies);
+        }
     }
 
     {
-        mux_rules.extend(proxy_servers.into_iter().map(|s| {
+        mux_rules.extend(proxy_servers_root_ltd.into_iter().map(|s| {
             Rule({
                 match s {
                     ServerTld::Tld(domain) => format!("DOMAIN-SUFFIX,{},DIRECT", domain),

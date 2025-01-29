@@ -2,12 +2,14 @@ pub mod http;
 pub mod utils;
 
 pub use http::parse_subscription_userinfo_in_header;
+use monostate::MustBe;
 use serde::{Deserialize, Serialize};
 use serde_yaml::Value;
 use std::collections::HashMap;
-use monostate::MustBe;
 
-pub fn hysteria_v2_flatten_deserialize_with<'de, D>(deserializer: D) -> Result<HashMap<String, Value>, D::Error>
+pub fn hysteria_v2_flatten_deserialize_with<'de, D>(
+    deserializer: D,
+) -> Result<HashMap<String, Value>, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
@@ -15,16 +17,18 @@ where
     match (map.contains_key("password"), map.contains_key("auth")) {
         (true, false) => {
             map.insert("auth".to_string(), map.get("password").unwrap().clone());
-        },
+        }
         (false, true) => {
             map.insert("password".to_string(), map.get("auth").unwrap().clone());
-        },
+        }
         _ => {}
     }
     Ok(map)
 }
 
-pub fn hysteria_v1_flatten_deserialize_with<'de, D>(deserializer: D) -> Result<HashMap<String, Value>, D::Error>
+pub fn hysteria_v1_flatten_deserialize_with<'de, D>(
+    deserializer: D,
+) -> Result<HashMap<String, Value>, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
@@ -32,10 +36,10 @@ where
     match (map.contains_key("auth-str"), map.contains_key("auth_str")) {
         (true, false) => {
             map.insert("auth_str".to_string(), map.get("auth-str").unwrap().clone());
-        },
+        }
         (false, true) => {
             map.insert("auth-str".to_string(), map.get("auth_str").unwrap().clone());
-        },
+        }
         _ => {}
     }
     Ok(map)
@@ -74,7 +78,7 @@ pub struct OtherProxy {
 pub enum Proxy {
     HysteriaV1(HysteriaV1Proxy),
     HysteriaV2(HysteriaV2Proxy),
-    OtherProxy(OtherProxy)
+    OtherProxy(OtherProxy),
 }
 
 impl Proxy {
@@ -83,6 +87,14 @@ impl Proxy {
             Proxy::HysteriaV2(proxy) => &proxy.name,
             Proxy::HysteriaV1(proxy) => &proxy.name,
             Proxy::OtherProxy(proxy) => &proxy.name,
+        }
+    }
+
+    pub fn set_name(&mut self, name: String) {
+        match self {
+            Proxy::HysteriaV2(proxy) => proxy.name = name,
+            Proxy::HysteriaV1(proxy) => proxy.name = name,
+            Proxy::OtherProxy(proxy) => proxy.name = name,
         }
     }
 
@@ -137,8 +149,8 @@ pub struct ClashConfig {
 
 #[cfg(test)]
 mod tests {
-    use std::assert_matches::assert_matches;
     use super::{ClashConfig, Proxy};
+    use std::assert_matches::assert_matches;
 
     #[test]
     fn test_model() -> anyhow::Result<()> {
@@ -157,7 +169,7 @@ mod tests {
     }
 
     #[test]
-    fn test_hysteria_v1_auth_str_polyfill () {
+    fn test_hysteria_v1_auth_str_polyfill() {
         let proxy_str1 = r#"
             { name: "aaa", type: hysteria, server: "bbb", port: 4430, auth_str: "dddd", alpn: h3, protocol: udp, up: 70, down: 150, fast-open: true, disable_mtu_discovery: true, skip-cert-verify: true, ports: 5000-20000 }
         "#;
@@ -175,13 +187,19 @@ mod tests {
 
         #[allow(irrefutable_let_patterns)]
         if let Proxy::HysteriaV1(proxy) = proxy1 {
-            assert_eq!(proxy.others.get("auth_str").unwrap(), &serde_yaml::Value::String("dddd".to_string()));
-            assert_eq!(proxy.others.get("auth-str").unwrap(), &serde_yaml::Value::String("dddd".to_string()));
+            assert_eq!(
+                proxy.others.get("auth_str").unwrap(),
+                &serde_yaml::Value::String("dddd".to_string())
+            );
+            assert_eq!(
+                proxy.others.get("auth-str").unwrap(),
+                &serde_yaml::Value::String("dddd".to_string())
+            );
         }
     }
 
     #[test]
-    fn test_hysteria_v2_auth_polyfill () {
+    fn test_hysteria_v2_auth_polyfill() {
         let proxy_str1 = r#"
             { name: "aaa", type: hysteria2, server: "bbb", port: 4430, password: "dddd", alpn: h3, protocol: udp, up: 70, down: 150, fast-open: true, disable_mtu_discovery: true, skip-cert-verify: true, ports: 5000-20000 }
         "#;
@@ -192,8 +210,14 @@ mod tests {
 
         #[allow(irrefutable_let_patterns)]
         if let Proxy::HysteriaV2(proxy) = &proxy1 {
-            assert_eq!(proxy.others.get("password").unwrap(), &serde_yaml::Value::String("dddd".to_string()));
-            assert_eq!(proxy.others.get("auth").unwrap(), &serde_yaml::Value::String("dddd".to_string()));
+            assert_eq!(
+                proxy.others.get("password").unwrap(),
+                &serde_yaml::Value::String("dddd".to_string())
+            );
+            assert_eq!(
+                proxy.others.get("auth").unwrap(),
+                &serde_yaml::Value::String("dddd".to_string())
+            );
         }
     }
 }
