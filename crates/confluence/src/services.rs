@@ -477,12 +477,12 @@ pub async fn delete_one_profile(
     let db = &state.conn;
     let mut pm = profile::Entity::find_by_id(id)
         .find_with_related(confluence::Entity)
-        .filter(confluence::Column::Id.eq(&current_user.user_id))
+        .filter(confluence::Column::Creator.eq(&current_user.user_id))
         .limit(1)
         .all(db)
         .await?;
-    if let Some(pm) = pm.pop() {
-        let pam = pm.0.into_active_model();
+    if let Some((pm, _)) = pm.pop() {
+        let pam = pm.into_active_model();
         pam.delete(db).await?;
         Ok(())
     } else {
