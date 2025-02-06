@@ -9,9 +9,9 @@
   "scripts": {
     "dev": "npm-run-all -p dev:proxy dev:outposts-web",
     "dev:proxy": "npm run start -w dev-proxy",
-    "dev:outposts-web": "nx serve outposts-web",
-    "build:outposts-web": "npx --yes nx build outposts-web",
-    "lint:outposts-web": "npx --yes nx lint outposts-web"
+    "dev:outposts-web": "nx --no-cloud serve outposts-web",
+    "build:outposts-web": "nx --no-cloud build outposts-web",
+    "lint:outposts-web": "nx --no-cloud lint outposts-web"
   },
   "repository": {
     "type": "git",

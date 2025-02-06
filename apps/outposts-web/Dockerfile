@@ -6,7 +6,6 @@ WORKDIR /usr/src/app
 COPY . .
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store pnpm install --frozen-lockfile
 RUN --mount=type=cache,id=angular,target=/usr/src/app/.angular \
-    --mount=type=cache,id=nx-cache,target=/usr/src/app/.nx \
     npm run build:outposts-web
 
 FROM nginx:alpine
