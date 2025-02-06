@@ -1,7 +1,8 @@
-FROM node:lts-slim AS builder
+FROM node:22-slim AS builder
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
+RUN corepack prepare pnpm@10.2.0 --activate
 WORKDIR /usr/src/app
 COPY . .
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store pnpm install --no-frozen-lockfile
