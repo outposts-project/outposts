@@ -351,7 +351,7 @@ pub async fn mux_one_confluence_impl(
         };
         sources.push((name, config));
     }
-    let mux_config = mux_configs(&template, &sources)?;
+    let mux_config = mux_configs(cm.name.as_str(), &template, &sources)?;
     let mux_content = serde_yaml::to_string(&mux_config).map_err(ConfigError::from)?;
     let mut cm = cm.into_active_model();
     cm.mux_content = Set(mux_content);

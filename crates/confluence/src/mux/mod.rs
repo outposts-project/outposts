@@ -6,12 +6,14 @@ use crate::clash::{ClashConfig, Proxy, ProxyGroup, ProxyGroupKind, Rule};
 const PROXY_SLOT: &str = "<mux>";
 
 pub fn mux_configs(
+    template_name: &str,
     template: &ClashConfig,
     sources: &[(&str, ClashConfig)],
 ) -> anyhow::Result<ClashConfig> {
     let others = &template.others;
     let rules = &template.rules;
     let proxy_groups = &template.proxy_groups;
+    let template_proxies = &template.proxies;
     let mut source_name_to_proxies_map = HashMap::<&str, Vec<Proxy>>::new();
     let mut proxy_servers_root_ltd = HashSet::<ServerTld<'_>>::new();
     let mut proxy_name_count = HashMap::<&str, usize>::new();
@@ -19,18 +21,45 @@ pub fn mux_configs(
     let mut mux_proxy_groups = vec![];
     let mut mux_rules = vec![];
 
-    for (name, config) in sources {
-        for p in &config.proxies {
+    {
+      for p in template_proxies {
+        {
+          // resolve proxy server root domain
+          let proxy_server_root = parse_server_tld(template_name, p.server())?;
+          proxy_servers_root_ltd.insert(proxy_server_root);
+        }
+
+        {
+          // group proxies by config name
+          source_name_to_proxies_map
+            .entry(template_name)
+            .and_modify(|v| v.push(p.clone()))
+            .or_insert_with(|| vec![p.clone()]);
+        }
+
+        {
+          proxy_name_count
+            .entry(p.name())
+            .and_modify(|v| {
+              *v += 1;
+            })
+            .or_insert_with(|| 1);
+        }
+      }
+    }
+
+    for (source_name, source_config) in sources {
+        for p in &source_config.proxies {
             {
                 // resolve proxy server root domain
-                let proxy_server_root = parse_server_tld(name, p.server())?;
+                let proxy_server_root = parse_server_tld(source_name, p.server())?;
                 proxy_servers_root_ltd.insert(proxy_server_root);
             }
 
             {
                 // group proxies by config name
                 source_name_to_proxies_map
-                    .entry(name)
+                    .entry(source_name)
                     .and_modify(|v| v.push(p.clone()))
                     .or_insert_with(|| vec![p.clone()]);
             }
@@ -130,7 +159,7 @@ mod tests {
         let config_tmpl: ClashConfig = serde_yaml::from_str(tmpl)?;
         let sources = vec![("proxy1", config1), ("proxy2", config2)];
 
-        let config_res = mux_configs(&config_tmpl, &sources)?;
+        let config_res = mux_configs("test", &config_tmpl, &sources)?;
 
         //         let expected_rules: Vec<Rule> = serde_yaml::from_str(
         //             r"

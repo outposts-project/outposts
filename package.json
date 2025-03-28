@@ -118,9 +118,17 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
+      "@parcel/watcher",
       "@swc/core",
       "esbuild",
+      "lmdb",
+      "msgpackr-extract",
       "nx"
+    ],
+    "ignoredBuiltDependencies": [
+      "@parcel/watcher",
+      "lmdb",
+      "msgpackr-extract"
     ]
   }
 }
