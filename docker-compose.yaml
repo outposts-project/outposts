@@ -1,13 +1,4 @@
 services:
-  serverbee-web:
-    container_name: serverbee-web
-    image: zingerbee/serverbee-web
-    volumes:
-      - /proc:/proc
-    network_mode: host
-    restart: always
-    privileged: true
-
   postgres:
     container_name: postgres
     image: postgres
